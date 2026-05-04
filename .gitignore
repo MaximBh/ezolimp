@@ -7,7 +7,6 @@ __pycache__/
 .env.local.bak
 .vscode/
 .idea/
-backend/cache/
 .ollama/
 *.log
 scratch/
