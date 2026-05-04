@@ -132,16 +132,21 @@ def task_olympiad(task) -> str:
 
 
 def task_list_payload(task, view_count=None):
-    """Lightweight payload for task lists — omits heavy fields like solution_explanation, attachments."""
+    """Lightweight payload for task lists — truncates problem_statement, omits heavy fields."""
+    raw_statement = _strip_source_lines(task.problem_statement or "")
+    # Truncate for list view — full text available via /tasks/{id} endpoint
+    stmt = raw_statement[:300] + ("…" if len(raw_statement) > 300 else "")
     payload = {
         "id": task.id,
         "title": build_task_title(task.title, _normalize_subject(task.subject), task.grade, task.topic),
+        "problem_statement": stmt,
         "difficulty": _normalize_difficulty(task.difficulty),
         "subject": _normalize_subject(task.subject),
         "olympiad": task_olympiad(task),
         "grade": task.grade,
         "topic": task.topic,
         "tags": task.tags,
+        "answer_input_hint": answer_input_hint_for_task(task),
         "points": task.points,
         "time_limit": _time_limit_by_difficulty(task.difficulty),
     }

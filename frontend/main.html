@@ -123,9 +123,9 @@
     </div>
   </div>
   <div>
-    <div class="task-card">
+    <div class="task-card" id="dailyCard" style="cursor:pointer" title="Открыть задачу">
       <div class="task-card-top">
-        <span class="task-card-label">Задача дня</span>
+        <span class="task-card-label">⭐ Задача дня · +50% баллов</span>
         <span class="task-badge" id="dailyDiff">Средняя</span>
       </div>
       <div class="task-title" id="dailyTaskTitle">Загрузка...</div>
@@ -246,18 +246,23 @@ async function loadDailyTask() {
     const data = await r.json();
     const tasks = (data.tasks || []).filter(t => t.problem_statement);
     if (!tasks.length) throw new Error();
-    // детерминированный выбор по дате
     const dayIdx = Math.floor(Date.now() / 86400000) % tasks.length;
     dailyTask = tasks[dayIdx];
     const diff = dailyTask.difficulty || 'medium';
     document.getElementById('dailyTaskTitle').textContent = dailyTask.problem_statement.slice(0, 160) + (dailyTask.problem_statement.length > 160 ? '…' : '');
     document.getElementById('dailyDiff').textContent = diffLabels[diff] || diff;
+    const bonusPoints = Math.round((dailyTask.points || 10) * 1.5);
     const meta = document.getElementById('dailyTaskMeta');
     meta.innerHTML = `<span class="meta-tag">${dailyTask.subject || ''}</span>` +
       (dailyTask.grade ? `<span class="meta-tag n">${dailyTask.grade} класс</span>` : '') +
-      `<span class="meta-tag n">${dailyTask.points || 10} баллов</span>`;
+      `<span class="meta-tag n">${bonusPoints} баллов</span>`;
     const formatHint = dailyTask.answer_input_hint || 'Введите один ответ.';
     document.getElementById('dailyInputHint').textContent = `Формат ответа: ${formatHint}`;
+    // Make card clickable — navigate to training with task
+    document.getElementById('dailyCard').addEventListener('click', (e) => {
+      if (e.target.closest('input, button')) return;
+      window.location.href = `training.html?task_id=${dailyTask.id}`;
+    });
   } catch {
     document.getElementById('dailyTaskTitle').textContent = 'Не удалось загрузить задачу';
   }
@@ -272,7 +277,7 @@ document.getElementById('dailySubmit').addEventListener('click', async () => {
   const btn = document.getElementById('dailySubmit');
   btn.disabled = true; btn.textContent = '...';
   try {
-    const r = await fetch(`${API_URL}/tasks/${dailyTask.id}/solve?user_answer=${encodeURIComponent(ans)}`, {
+    const r = await fetch(`${API_URL}/tasks/${dailyTask.id}/solve?user_answer=${encodeURIComponent(ans)}&is_daily=true`, {
       method: 'POST', headers: { Authorization: token }
     });
     const res = await r.json();

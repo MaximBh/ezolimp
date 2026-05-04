@@ -491,7 +491,7 @@ def get_task_solution(task_id: int, mark_viewed: bool = True, enrich: bool = Tru
 
 
 @router.post("/tasks/{task_id}/solve")
-def solve_task(task_id: int, user_answer: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def solve_task(task_id: int, user_answer: str, is_daily: bool = False, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
         task = db.query(Task).filter(Task.id == task_id).first()
         if not task:
@@ -549,6 +549,18 @@ def solve_task(task_id: int, user_answer: str, current_user: User = Depends(get_
         task_grade = task.grade or 5
         adjusted_points = round(base_n * (1 - (user_grade - task_grade) * 0.1))
         adjusted_points = max(adjusted_points, 1)  # минимум 1 балл
+
+        # Бонус +50% за задачу дня
+        daily_bonus_applied = False
+        if is_daily:
+            # Проверка: эта ли задача сегодня дневная (детерминированный выбор, как на фронте)
+            import time
+            all_task_ids = [t.id for t in db.query(Task.id).order_by(Task.id).all()]
+            if all_task_ids:
+                day_idx = int(time.time() // 86400) % len(all_task_ids)
+                if all_task_ids[day_idx] == task_id:
+                    adjusted_points = round(adjusted_points * 1.5)
+                    daily_bonus_applied = True
 
         points_earned = adjusted_points if is_correct and not previous_correct and not viewed_solution else 0
         db.add(Solution(user_id=current_user.id, task_id=task_id, answer=user_answer,
