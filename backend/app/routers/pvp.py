@@ -45,9 +45,14 @@ async def pvp_websocket(websocket: WebSocket, user_id: int, db: Session = Depend
                     except:
                         attachments = []
 
+                    p1_obj = db.query(User).filter(User.id == player1["user_id"]).first()
+                    p2_obj = db.query(User).filter(User.id == player2["user_id"]).first()
+                    
                     match_data = {
                         "type": "match_found", "match_id": match_id,
                         "opponent": player2["username"] if player1["user_id"] == user_id else player1["username"],
+                        "opponent_avatar": p2_obj.avatar_url if player1["user_id"] == user_id else p1_obj.avatar_url,
+                        "your_avatar": p1_obj.avatar_url if player1["user_id"] == user_id else p2_obj.avatar_url,
                         "task": {"id": task.id,
                                  "title": _build_task_title(task.title, _normalize_subject(task.subject), task.grade, task.topic),
                                  "problem_statement": _strip_source_lines(task.problem_statement or ""),
@@ -61,6 +66,8 @@ async def pvp_websocket(websocket: WebSocket, user_id: int, db: Session = Depend
                     if opponent_id in match_manager.connections:
                         opp_data = dict(match_data)
                         opp_data["opponent"] = player1["username"] if player2["user_id"] == opponent_id else player2["username"]
+                        opp_data["opponent_avatar"] = p1_obj.avatar_url if player2["user_id"] == opponent_id else p2_obj.avatar_url
+                        opp_data["your_avatar"] = p2_obj.avatar_url if player2["user_id"] == opponent_id else p1_obj.avatar_url
                         await match_manager.connections[opponent_id].send_json(opp_data)
                 else:
                     await websocket.send_json({"type": "waiting", "message": "Ожидание соперника..."})
