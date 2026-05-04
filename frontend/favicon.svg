@@ -1,16 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="500" height="500">
   <defs>
-    <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#9333ea" />
-      <stop offset="100%" stop-color="#6b21a8" />
-    </linearGradient>
+    <style>
+      .color { fill: none; stroke: #5D27A6; stroke-linecap: round; stroke-linejoin: round; }
+      .outer { stroke-width: 8; }
+      .inner { stroke-width: 2.5; }
+      .dots { fill: #5D27A6; }
+    </style>
   </defs>
-  <!-- Внешний шестиугольник (обводка) -->
-  <polygon points="50,5 90,27.5 90,72.5 50,95 10,72.5 10,27.5" fill="none" stroke="url(#hexGrad)" stroke-width="8" stroke-linejoin="round" />
-  <!-- Внутренние линии к центру -->
-  <line x1="10" y1="27.5" x2="50" y2="50" stroke="url(#hexGrad)" stroke-width="6" stroke-linecap="round" />
-  <line x1="90" y1="27.5" x2="50" y2="50" stroke="url(#hexGrad)" stroke-width="6" stroke-linecap="round" />
-  <line x1="50" y1="95" x2="50" y2="50" stroke="url(#hexGrad)" stroke-width="6" stroke-linecap="round" />
-  <!-- Центральная точка -->
-  <circle cx="50" cy="50" r="10" fill="#a855f7" />
+
+  <polygon class="color outer" points="100,20 169.28,60 169.28,140 100,180 30.72,140 30.72,60" />
+
+  <polygon class="color inner" points="100,54 139.84,77 139.84,123 100,146 60.16,123 60.16,77" />
+
+  <g class="color inner">
+    <line x1="100" y1="20" x2="100" y2="54" />
+    <line x1="169.28" y1="60" x2="139.84" y2="77" />
+    <line x1="169.28" y1="140" x2="139.84" y2="123" />
+    <line x1="100" y1="180" x2="100" y2="146" />
+    <line x1="30.72" y1="140" x2="60.16" y2="123" />
+    <line x1="30.72" y1="60" x2="60.16" y2="77" />
+  </g>
+
+  <g class="dots">
+    <circle cx="100" cy="54" r="4.5" />
+    <circle cx="139.84" cy="77" r="4.5" />
+    <circle cx="139.84" cy="123" r="4.5" />
+    <circle cx="100" cy="146" r="4.5" />
+    <circle cx="60.16" cy="123" r="4.5" />
+    <circle cx="60.16" cy="77" r="4.5" />
+    <circle cx="100" cy="100" r="14" />
+  </g>
 </svg>
