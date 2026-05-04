@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EzOlimp вЂ” Р РµР№С‚РёРЅРі</title>
+<title>EzOlimp — Рейтинг</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="shared.css">
 <script>var d=document.documentElement;d.setAttribute("data-theme",localStorage.getItem("ez-theme")||"light");d.classList.add("no-transition");window.addEventListener("load",function(){d.classList.remove("no-transition")})</script>
@@ -48,21 +48,21 @@
 <main>
 <div class="lb-wrap">
   <div class="page-header" style="padding:0 0 12px">
-    <h1>Р РµР№С‚РёРЅРі</h1>
-    <p>РўРѕРї РёРіСЂРѕРєРѕРІ РїР»Р°С‚С„РѕСЂРјС‹</p>
+    <h1>Рейтинг</h1>
+    <p>Топ игроков платформы</p>
   </div>
 
   <div class="lb-tabs">
-    <button class="lb-tab active" id="tabElo" onclick="switchTab('elo')">РџРѕ Elo СЂРµР№С‚РёРЅРіСѓ</button>
-    <button class="lb-tab" id="tabPoints" onclick="switchTab('points')">РџРѕ Р±Р°Р»Р»Р°Рј</button>
+    <button class="lb-tab active" id="tabElo" onclick="switchTab('elo')">По Elo рейтингу</button>
+    <button class="lb-tab" id="tabPoints" onclick="switchTab('points')">По баллам</button>
   </div>
 
   <div class="lb-table fade-up">
     <div class="lb-head" id="lbHead">
-      <span>РњРµСЃС‚Рѕ</span><span>РРіСЂРѕРє</span><span>РЁРєРѕР»Р°</span>
-      <span>Р РµР№С‚РёРЅРі</span><span>Р РµС€РµРЅРѕ</span><span></span>
+      <span>Место</span><span>Игрок</span><span>Школа</span>
+      <span>Рейтинг</span><span>Решено</span><span></span>
     </div>
-    <div id="lbBody"><div style="padding:40px;text-align:center;color:var(--text3)">Р—Р°РіСЂСѓР·РєР°...</div></div>
+    <div id="lbBody"><div style="padding:40px;text-align:center;color:var(--text3)">Загрузка...</div></div>
   </div>
 </div>
 </main>
@@ -84,26 +84,26 @@ function switchTab(sort) {
   // Update header labels
   const head = document.getElementById('lbHead');
   if (sort === 'points') {
-    head.innerHTML = '<span>РњРµСЃС‚Рѕ</span><span>РРіСЂРѕРє</span><span>РЁРєРѕР»Р°</span><span>Р‘Р°Р»Р»С‹</span><span>Р РµС€РµРЅРѕ</span><span></span>';
+    head.innerHTML = '<span>Место</span><span>Игрок</span><span>Школа</span><span>Баллы</span><span>Решено</span><span></span>';
   } else {
-    head.innerHTML = '<span>РњРµСЃС‚Рѕ</span><span>РРіСЂРѕРє</span><span>РЁРєРѕР»Р°</span><span>Р РµР№С‚РёРЅРі</span><span>Р РµС€РµРЅРѕ</span><span></span>';
+    head.innerHTML = '<span>Место</span><span>Игрок</span><span>Школа</span><span>Рейтинг</span><span>Решено</span><span></span>';
   }
 
   loadLeaderboard(sort);
 }
 
 async function loadLeaderboard(sort = 'elo') {
-  document.getElementById('lbBody').innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)">Р—Р°РіСЂСѓР·РєР°...</div>';
+  document.getElementById('lbBody').innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)">Загрузка...</div>';
   try {
     const r = await fetch(`${API_URL}/leaderboard?sort=${sort}`);
     const data = await r.json();
     const lb = data.leaderboard || [];
     if (!lb.length) {
-      document.getElementById('lbBody').innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)">РќРµС‚ РґР°РЅРЅС‹С…</div>';
+      document.getElementById('lbBody').innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)">Нет данных</div>';
       return;
     }
     const rankClass = r => r===1?'gold':r===2?'silver':r===3?'bronze':'';
-    const rankIcon  = r => r<=3 ? ['рџҐ‡','рџҐ€','рџҐ‰'][r-1] : r;
+    const rankIcon  = r => r<=3 ? ['🥇','🥈','🥉'][r-1] : r;
 
     const valueCol = sort === 'points'
       ? u => `<span class="lb-rating">${u.total_points ?? 0}</span>`
@@ -116,13 +116,13 @@ async function loadLeaderboard(sort = 'elo') {
           <img class="lb-avatar" src="${u.avatar_url||'https://via.placeholder.com/36'}" alt="">
           <div><div class="lb-name">${u.full_name||u.username}</div><div class="lb-username">@${u.username}</div></div>
         </div>
-        <div style="font-size:14px;color:var(--text2)">${u.school||'вЂ”'}</div>
+        <div style="font-size:14px;color:var(--text2)">${u.school||'—'}</div>
         <div>${valueCol(u)}</div>
         <div style="font-size:14px;color:var(--text2)">${u.total_solved}</div>
-        <div><a class="lb-link" href="profile.html?id=${u.id}">РџСЂРѕС„РёР»СЊ</a></div>
+        <div><a class="lb-link" href="profile.html?id=${u.id}">Профиль</a></div>
       </div>`).join('');
   } catch {
-    document.getElementById('lbBody').innerHTML = '<div style="padding:40px;text-align:center;color:var(--accent)">РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё</div>';
+    document.getElementById('lbBody').innerHTML = '<div style="padding:40px;text-align:center;color:var(--accent)">Ошибка загрузки</div>';
   }
 }
 
@@ -130,4 +130,3 @@ loadLeaderboard('elo');
 </script>
 </body>
 </html>
-

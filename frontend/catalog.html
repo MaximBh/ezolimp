@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EzOlimp - РљР°С‚Р°Р»РѕРі Р·Р°РґР°С‡</title>
+<title>EzOlimp - Каталог задач</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="shared.css">
 <script>var d=document.documentElement;d.setAttribute("data-theme",localStorage.getItem("ez-theme")||"light");d.classList.add("no-transition");window.addEventListener("load",function(){d.classList.remove("no-transition")})</script>
@@ -373,25 +373,25 @@
 <main>
 
 <div class="catalog-shell">
-  <aside class="filters-panel" aria-label="Р¤РёР»СЊС‚СЂС‹ РєР°С‚Р°Р»РѕРіР°">
+  <aside class="filters-panel" aria-label="Фильтры каталога">
     <div class="filter-cascade" id="filterCascade">
       <button class="filter-root" id="filtersToggle" type="button" aria-expanded="false">
         <span>
-          <span class="filter-root-title">Р¤РёР»СЊС‚СЂС‹</span>
-          <strong id="filterSummary">Р’С‹Р±РµСЂРёС‚Рµ РїСЂРµРґРјРµС‚</strong>
+          <span class="filter-root-title">Фильтры</span>
+          <strong id="filterSummary">Выберите предмет</strong>
         </span>
       </button>
       <div class="cascade-menu" id="filtersList"></div>
     </div>
-    <button class="filter-clear" id="clearFilters" type="button">РЎР±СЂРѕСЃРёС‚СЊ</button>
+    <button class="filter-clear" id="clearFilters" type="button">Сбросить</button>
   </aside>
 
   <section class="tasks-panel">
     <div class="tasks-panel-head">
-      <h2 id="tasksHeading">10 СЃР°РјС‹С… РїРѕРїСѓР»СЏСЂРЅС‹С… Р·Р°РґР°С‡ Р·Р° РґРµРЅСЊ</h2>
+      <h2 id="tasksHeading">10 самых популярных задач за день</h2>
       <p id="tasksSubheading"></p>
     </div>
-    <div id="tasksList"><div class="empty">Р—Р°РіСЂСѓР·РєР° Р·Р°РґР°С‡...</div></div>
+    <div id="tasksList"><div class="empty">Загрузка задач...</div></div>
   </section>
 </div>
 
@@ -404,10 +404,10 @@
 renderNav('catalog.html');
 renderFooter();
 
-const diffLabels = { easy:'Р›РµРіРєР°СЏ', medium:'РЎСЂРµРґРЅСЏСЏ', hard:'РЎР»РѕР¶РЅР°СЏ', other:'-' };
+const diffLabels = { easy:'Легкая', medium:'Средняя', hard:'Сложная', other:'-' };
 const defaultFilters = {
-  subject:['РјР°С‚РµРјР°С‚РёРєР°','РёРЅС„РѕСЂРјР°С‚РёРєР°','С„РёР·РёРєР°','С…РёРјРёСЏ','Р±РёРѕР»РѕРіРёСЏ','Р°РЅРіР»РёР№СЃРєРёР№','СЂСѓСЃСЃРєРёР№','РёСЃС‚РѕСЂРёСЏ','РіРµРѕРіСЂР°С„РёСЏ','РѕР±С‰РµСЃС‚РІРѕР·РЅР°РЅРёРµ','РїСЂР°РІРѕ','Р»РёС‚РµСЂР°С‚СѓСЂР°','СЌРєРѕР»РѕРіРёСЏ','СЂРѕР±РѕС‚РѕС‚РµС…РЅРёРєР°'],
-  olympiad:['Р’РЎРћРЁ'],
+  subject:['математика','информатика','физика','химия','биология','английский','русский','история','география','обществознание','право','литература','экология','робототехника'],
+  olympiad:['ВСОШ'],
   grade:['5','6','7','8','9','10','11'],
 };
 const filters = { subject:'', olympiad:'', grade:'' };
@@ -456,7 +456,7 @@ function buildDefaultTree() {
 
 function prettyValue(type, value) {
   if (!value) return '';
-  if (type === 'grade') return `${value} РєР»Р°СЃСЃ`;
+  if (type === 'grade') return `${value} класс`;
   return String(value).charAt(0).toUpperCase() + String(value).slice(1);
 }
 
@@ -478,7 +478,7 @@ function filterSummaryText() {
   if (filters.subject) parts.push(prettyValue('subject', filters.subject));
   if (filters.olympiad) parts.push(prettyValue('olympiad', filters.olympiad));
   if (filters.grade) parts.push(prettyValue('grade', filters.grade));
-  return parts.length ? parts.join(' / ') : 'Р’С‹Р±РµСЂРёС‚Рµ РїСЂРµРґРјРµС‚';
+  return parts.length ? parts.join(' / ') : 'Выберите предмет';
 }
 
 function setCascadeOpen(open) {
@@ -494,20 +494,20 @@ function renderCascade() {
   const subjects = Object.keys(filterTree);
   const root = document.getElementById('filtersList');
   root.innerHTML = `
-    <div class="cascade-title">РџСЂРµРґРјРµС‚</div>
+    <div class="cascade-title">Предмет</div>
     ${subjects.map(subject => {
       const olympiads = Object.keys(filterTree[subject] || {});
       return `<div class="cascade-item ${olympiads.length ? 'has-child' : ''} ${filters.subject === subject ? 'selected' : ''}">
         <button class="cascade-option ${filters.subject === subject ? 'active' : ''}" type="button" data-level="subject" data-subject="${escAttr(subject)}">${escHtml(prettyValue('subject', subject))}</button>
         ${olympiads.length ? `<div class="cascade-level">
-          <div class="cascade-title">РћР»РёРјРїРёР°РґР°</div>
+          <div class="cascade-title">Олимпиада</div>
           ${olympiads.map(olympiad => {
             const grades = (filterTree[subject][olympiad] || []).map(String);
             const olympiadActive = filters.subject === subject && filters.olympiad === olympiad;
             return `<div class="cascade-item ${grades.length ? 'has-child' : ''} ${olympiadActive ? 'selected' : ''}">
               <button class="cascade-option ${olympiadActive ? 'active' : ''}" type="button" data-level="olympiad" data-subject="${escAttr(subject)}" data-olympiad="${escAttr(olympiad)}">${escHtml(prettyValue('olympiad', olympiad))}</button>
               ${grades.length ? `<div class="cascade-level">
-                <div class="cascade-title">РљР»Р°СЃСЃ</div>
+                <div class="cascade-title">Класс</div>
                 ${grades.map(grade => `<div class="cascade-item">
                   <button class="cascade-option ${filters.subject === subject && filters.olympiad === olympiad && filters.grade === grade ? 'active' : ''}" type="button" data-level="grade" data-subject="${escAttr(subject)}" data-olympiad="${escAttr(olympiad)}" data-grade="${escAttr(grade)}">${escHtml(prettyValue('grade', grade))}</button>
                 </div>`).join('')}
@@ -567,12 +567,12 @@ function setPanelText(heading, subheading = '') {
 function renderTask(task, { showViews = false } = {}) {
   const diff = task.difficulty || 'other';
   const cls = { easy:'badge-easy', medium:'badge-medium', hard:'badge-hard' }[diff] || '';
-  const stmt = (task.problem_statement || '').split('\n').filter(l => !/^(source|РёСЃС‚РѕС‡РЅРёРє)\s*:/i.test(l.trim())).join('\n').trim();
+  const stmt = (task.problem_statement || '').split('\n').filter(l => !/^(source|источник)\s*:/i.test(l.trim())).join('\n').trim();
   const meta = [
     task.subject,
     task.olympiad,
-    task.grade ? `${task.grade} РєР»Р°СЃСЃ` : '',
-    `${task.points || 10} Р±Р°Р»Р»РѕРІ`,
+    task.grade ? `${task.grade} класс` : '',
+    `${task.points || 10} баллов`,
   ].filter(Boolean);
   const views = Number(task.view_count || 0);
 
@@ -584,7 +584,7 @@ function renderTask(task, { showViews = false } = {}) {
     <div class="task-item-body">${escHtml(stmt)}</div>
     <div class="task-item-footer">
       <div class="task-item-meta">${meta.map(item => `<span>${escHtml(item)}</span>`).join('')}</div>
-      ${showViews && views > 0 ? `<div class="task-views">${views} ${pluralRu(views, ['РїСЂРѕСЃРјРѕС‚СЂ','РїСЂРѕСЃРјРѕС‚СЂР°','РїСЂРѕСЃРјРѕС‚СЂРѕРІ'])}</div>` : ''}
+      ${showViews && views > 0 ? `<div class="task-views">${views} ${pluralRu(views, ['просмотр','просмотра','просмотров'])}</div>` : ''}
     </div>
   </article>`;
 }
@@ -592,7 +592,7 @@ function renderTask(task, { showViews = false } = {}) {
 function renderTasks(tasks, options = {}) {
   const list = document.getElementById('tasksList');
   if (!tasks.length) {
-    list.innerHTML = '<div class="empty">Р—Р°РґР°С‡Рё РЅРµ РЅР°Р№РґРµРЅС‹</div>';
+    list.innerHTML = '<div class="empty">Задачи не найдены</div>';
     return;
   }
   list.innerHTML = `<div class="tasks-grid">${tasks.map(task => renderTask(task, options)).join('')}</div>`;
@@ -609,13 +609,13 @@ async function loadFilterOptions() {
 }
 
 async function loadPopularTasks() {
-  setPanelText('10 СЃР°РјС‹С… РїРѕРїСѓР»СЏСЂРЅС‹С… Р·Р°РґР°С‡ Р·Р° РґРµРЅСЊ');
-  document.getElementById('tasksList').innerHTML = '<div class="empty">Р—Р°РіСЂСѓР·РєР° Р·Р°РґР°С‡...</div>';
+  setPanelText('10 самых популярных задач за день');
+  document.getElementById('tasksList').innerHTML = '<div class="empty">Загрузка задач...</div>';
   try {
     const data = await fetchJsonWithRetry(`${API_URL}/tasks/popular/today?limit=10`);
     renderTasks((data.tasks || []).slice(0, 10), { showViews:true });
   } catch {
-    document.getElementById('tasksList').innerHTML = '<div class="empty" style="color:var(--accent)">РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё Р·Р°РґР°С‡</div>';
+    document.getElementById('tasksList').innerHTML = '<div class="empty" style="color:var(--accent)">Ошибка загрузки задач</div>';
   }
 }
 
@@ -630,16 +630,16 @@ async function loadFilteredTasks() {
   if (filters.olympiad) params.append('olympiad', filters.olympiad);
   if (filters.grade) params.append('grade', filters.grade);
 
-  setPanelText('Р—Р°РґР°С‡Рё РїРѕ С„РёР»СЊС‚СЂР°Рј');
-  document.getElementById('tasksList').innerHTML = '<div class="empty">Р—Р°РіСЂСѓР·РєР° Р·Р°РґР°С‡...</div>';
+  setPanelText('Задачи по фильтрам');
+  document.getElementById('tasksList').innerHTML = '<div class="empty">Загрузка задач...</div>';
   try {
     const data = await fetchJsonWithRetry(`${API_URL}/tasks/filter?${params}`);
     const tasks = (data.tasks || []).filter(task => !Number.isNaN(parseInt(task.grade, 10)));
     const count = tasks.length;
-    document.getElementById('tasksSubheading').textContent = `${count} ${pluralRu(count, ['Р·Р°РґР°С‡Р°','Р·Р°РґР°С‡Рё','Р·Р°РґР°С‡'])}`;
+    document.getElementById('tasksSubheading').textContent = `${count} ${pluralRu(count, ['задача','задачи','задач'])}`;
     renderTasks(tasks);
   } catch {
-    document.getElementById('tasksList').innerHTML = '<div class="empty" style="color:var(--accent)">РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё Р·Р°РґР°С‡</div>';
+    document.getElementById('tasksList').innerHTML = '<div class="empty" style="color:var(--accent)">Ошибка загрузки задач</div>';
   }
 }
 
@@ -702,4 +702,3 @@ loadPopularTasks();
 </script>
 </body>
 </html>
-

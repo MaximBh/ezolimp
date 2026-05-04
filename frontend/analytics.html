@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EzOlimp вЂ” РђРЅР°Р»РёС‚РёРєР°</title>
+<title>EzOlimp — Аналитика</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="shared.css">
 <script>var d=document.documentElement;d.setAttribute("data-theme",localStorage.getItem("ez-theme")||"light");d.classList.add("no-transition");window.addEventListener("load",function(){d.classList.remove("no-transition")})</script>
@@ -45,32 +45,32 @@
 <div class="analytics-wrap">
 
   <div class="page-header" style="padding:0 0 28px">
-    <h1>РђРЅР°Р»РёС‚РёРєР°</h1>
-    <p>РўРІРѕР№ РїСЂРѕРіСЂРµСЃСЃ Рё СЃС‚Р°С‚РёСЃС‚РёРєР°</p>
+    <h1>Аналитика</h1>
+    <p>Твой прогресс и статистика</p>
   </div>
 
   <div class="stats-grid">
-    <div class="stat-box fade-up"><div class="num" id="aSolved">вЂ”</div><div class="lbl">Р РµС€РµРЅРѕ Р·Р°РґР°С‡</div></div>
-    <div class="stat-box fade-up"><div class="num" id="aCorrect">вЂ”</div><div class="lbl">РџСЂР°РІРёР»СЊРЅС‹С…</div></div>
-    <div class="stat-box fade-up"><div class="num" id="aPoints">вЂ”</div><div class="lbl">РћС‡РєРѕРІ</div></div>
-    <div class="stat-box fade-up"><div class="num" id="aRating">вЂ”</div><div class="lbl">Р РµР№С‚РёРЅРі Elo</div></div>
+    <div class="stat-box fade-up"><div class="num" id="aSolved">—</div><div class="lbl">Решено задач</div></div>
+    <div class="stat-box fade-up"><div class="num" id="aCorrect">—</div><div class="lbl">Правильных</div></div>
+    <div class="stat-box fade-up"><div class="num" id="aPoints">—</div><div class="lbl">Очков</div></div>
+    <div class="stat-box fade-up"><div class="num" id="aRating">—</div><div class="lbl">Рейтинг Elo</div></div>
   </div>
 
   <div class="two-col">
     <div class="analytics-card fade-up">
-      <h3>РџРѕ РїСЂРµРґРјРµС‚Р°Рј</h3>
-      <div id="subjectStats"><div style="color:var(--text3);font-size:14px">Р—Р°РіСЂСѓР·РєР°...</div></div>
+      <h3>По предметам</h3>
+      <div id="subjectStats"><div style="color:var(--text3);font-size:14px">Загрузка...</div></div>
     </div>
     <div class="analytics-card fade-up">
-      <h3>РџРѕ СЃР»РѕР¶РЅРѕСЃС‚Рё</h3>
-      <div id="diffStats"><div style="color:var(--text3);font-size:14px">Р—Р°РіСЂСѓР·РєР°...</div></div>
+      <h3>По сложности</h3>
+      <div id="diffStats"><div style="color:var(--text3);font-size:14px">Загрузка...</div></div>
     </div>
   </div>
 
   <div class="analytics-card fade-up">
-    <h3>Р”РёРЅР°РјРёРєР° СЂРµР№С‚РёРЅРіР°</h3>
+    <h3>Динамика рейтинга</h3>
     <div class="rating-history" id="ratingHistory">
-      <div style="color:var(--text3);font-size:14px;align-self:center">Р—Р°РіСЂСѓР·РєР°...</div>
+      <div style="color:var(--text3);font-size:14px;align-self:center">Загрузка...</div>
     </div>
   </div>
 
@@ -91,7 +91,7 @@ if (!token) { location.href='main.html'; }
 const DEMO_ANALYTICS = {
   rating: 1240,
   total_solved: 42, correct_answers: 38, total_points: 380,
-  by_subject: { 'РјР°С‚РµРјР°С‚РёРєР°':18, 'С„РёР·РёРєР°':10, 'РёРЅС„РѕСЂРјР°С‚РёРєР°':8, 'С…РёРјРёСЏ':4, 'Р±РёРѕР»РѕРіРёСЏ':2 },
+  by_subject: { 'математика':18, 'физика':10, 'информатика':8, 'химия':4, 'биология':2 },
   by_difficulty: { easy:20, medium:15, hard:7 },
   rating_history: [1000,1020,1010,1045,1080,1060,1100,1130,1120,1160,1200,1240]
 };
@@ -105,11 +105,11 @@ async function loadAnalytics() {
     if (!meR.ok) throw new Error();
     const me = await meR.json();
 
-    // Р—Р°РіСЂСѓР¶Р°РµРј РѕР±С‰СѓСЋ СЃС‚Р°С‚РёСЃС‚РёРєСѓ
+    // Загружаем общую статистику
     const statsR = await fetch(`${API_URL}/users/${me.id}/stats`, { headers:{ Authorization: token } });
     const stats = statsR.ok ? await statsR.json() : { total_solved:0, correct_answers:0, total_points:0 };
 
-    // Р—Р°РіСЂСѓР¶Р°РµРј РґРµС‚Р°Р»СЊРЅСѓСЋ Р°РЅР°Р»РёС‚РёРєСѓ
+    // Загружаем детальную аналитику
     const analyticsR = await fetch(`${API_URL}/users/${me.id}/analytics`, { headers:{ Authorization: token } });
     const analytics = analyticsR.ok ? await analyticsR.json() : { by_subject: {}, by_difficulty: {}, by_date: [] };
 
@@ -118,7 +118,7 @@ async function loadAnalytics() {
     document.getElementById('aCorrect').textContent = stats.correct_answers || 0;
     document.getElementById('aPoints').textContent  = stats.total_points || 0;
 
-    // РџСЂРµРґРјРµС‚С‹
+    // Предметы
     const bySubj = analytics.by_subject || {};
     if (Object.keys(bySubj).length) {
       const entries = Object.entries(bySubj);
@@ -134,12 +134,12 @@ async function loadAnalytics() {
             <div class="subject-count">${data.correct||0}</div>
           </div>`).join('');
     } else {
-      document.getElementById('subjectStats').innerHTML = '<div style="color:var(--text3);font-size:14px">РќРµС‚ РґР°РЅРЅС‹С…</div>';
+      document.getElementById('subjectStats').innerHTML = '<div style="color:var(--text3);font-size:14px">Нет данных</div>';
     }
 
-    // РЎР»РѕР¶РЅРѕСЃС‚СЊ
+    // Сложность
     const byDiff = analytics.by_difficulty || {};
-    const diffLabels = { easy:'Р›С‘РіРєРёРµ', medium:'РЎСЂРµРґРЅРёРµ', hard:'РЎР»РѕР¶РЅС‹Рµ' };
+    const diffLabels = { easy:'Лёгкие', medium:'Средние', hard:'Сложные' };
     if (Object.keys(byDiff).length) {
       document.getElementById('diffStats').innerHTML = Object.entries(byDiff).map(([d, data]) => `
         <div class="diff-row">
@@ -147,19 +147,19 @@ async function loadAnalytics() {
           <span style="font-weight:700;color:var(--accent)">${data.correct||0}</span>
         </div>`).join('');
     } else {
-      document.getElementById('diffStats').innerHTML = '<div style="color:var(--text3);font-size:14px">РќРµС‚ РґР°РЅРЅС‹С…</div>';
+      document.getElementById('diffStats').innerHTML = '<div style="color:var(--text3);font-size:14px">Нет данных</div>';
     }
 
-    // РСЃС‚РѕСЂРёСЏ (Р·Р°РіР»СѓС€РєР° РЅР° РѕСЃРЅРѕРІРµ РґР°С‚ Р°РєС‚РёРІРЅРѕСЃС‚Рё, РїРѕРєР° РЅРµС‚ С‚Р°Р±Р»РёС†С‹ РёСЃС‚РѕСЂРёРё СЂРµР№С‚РёРЅРіР°)
+    // История (заглушка на основе дат активности, пока нет таблицы истории рейтинга)
     const byDate = analytics.by_date || [];
     if (byDate.length) {
       const counts = byDate.map(d => d[1]);
       const maxD = Math.max(...counts);
       document.getElementById('ratingHistory').innerHTML = byDate.map(d => `
-        <div class="rating-bar" style="height:${Math.round(d[1]/maxD*72+8)}px" title="${d[0]}: ${d[1]} Р·Р°РґР°С‡"></div>
+        <div class="rating-bar" style="height:${Math.round(d[1]/maxD*72+8)}px" title="${d[0]}: ${d[1]} задач"></div>
       `).join('');
     } else {
-      document.getElementById('ratingHistory').innerHTML = '<div style="color:var(--text3);font-size:14px;align-self:center">РќР°С‡РЅРёС‚Рµ СЂРµС€Р°С‚СЊ Р·Р°РґР°С‡Рё РґР»СЏ РѕС‚СЃР»РµР¶РёРІР°РЅРёСЏ РїСЂРѕРіСЂРµСЃСЃР°</div>';
+      document.getElementById('ratingHistory').innerHTML = '<div style="color:var(--text3);font-size:14px;align-self:center">Начните решать задачи для отслеживания прогресса</div>';
     }
 
   } catch (err) {
@@ -171,4 +171,3 @@ loadAnalytics();
 </script>
 </body>
 </html>
-

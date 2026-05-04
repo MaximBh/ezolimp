@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EzOlimp вЂ” РџСЂРѕС„РёР»СЊ</title>
+<title>EzOlimp — Профиль</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="shared.css">
 <script>var d=document.documentElement;d.setAttribute("data-theme",localStorage.getItem("ez-theme")||"light");d.classList.add("no-transition");window.addEventListener("load",function(){d.classList.remove("no-transition")})</script>
@@ -13,7 +13,7 @@
   display:grid; grid-template-columns:280px 1fr; gap:24px; align-items:start;
 }
 
-/* Р›Р•Р’РђРЇ РљРћР›РћРќРљРђ */
+/* ЛЕВАЯ КОЛОНКА */
 .profile-sidebar {
   background:var(--surface); border:1px solid var(--border); border-radius:18px;
   padding:28px; text-align:center;
@@ -49,7 +49,7 @@
 .contact-row { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text2); margin-bottom:8px; }
 .contact-row svg { width:14px; height:14px; stroke:var(--accent); fill:none; stroke-width:2; flex-shrink:0; }
 
-/* РџР РђР’РђРЇ РљРћР›РћРќРљРђ */
+/* ПРАВАЯ КОЛОНКА */
 .profile-main { display:flex; flex-direction:column; gap:20px; }
 
 .pcard {
@@ -121,18 +121,18 @@
         <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
       </button>
     </div>
-    <div class="profile-name" id="profileName">Р”РµРјРѕ РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ</div>
-    <div class="profile-school" id="profileSchool">РЁРєРѕР»Р° в„–1, 10 РєР»Р°СЃСЃ</div>
+    <div class="profile-name" id="profileName">Демо Пользователь</div>
+    <div class="profile-school" id="profileSchool">Школа №1, 10 класс</div>
     <div class="profile-rating-badge" id="profileRating">1240</div>
     <div class="profile-actions">
-      <button class="btn btn-outline" id="editProfileBtn">Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ</button>
+      <button class="btn btn-outline" id="editProfileBtn">Редактировать</button>
     </div>
     <div class="sidebar-section" id="contactsSection" style="display:none">
-      <h4>РљРѕРЅС‚Р°РєС‚С‹</h4>
+      <h4>Контакты</h4>
       <div id="contactsList"></div>
     </div>
     <div class="sidebar-section" id="bioSection" style="display:none">
-      <h4>Рћ СЃРµР±Рµ</h4>
+      <h4>О себе</h4>
       <p id="bioText" style="font-size:14px;color:var(--text2);line-height:1.6"></p>
     </div>
   </div>
@@ -141,39 +141,39 @@
   <div class="profile-main">
 
     <div class="pcard fade-up">
-      <h3>РЎС‚Р°С‚РёСЃС‚РёРєР°</h3>
+      <h3>Статистика</h3>
       <div class="stats-grid">
-        <div class="stat-box"><div class="num" id="statSolved">42</div><div class="lbl">Р РµС€РµРЅРѕ Р·Р°РґР°С‡</div></div>
-        <div class="stat-box"><div class="num" id="statCorrect">38</div><div class="lbl">РџСЂР°РІРёР»СЊРЅС‹С…</div></div>
-        <div class="stat-box"><div class="num" id="statPoints">380</div><div class="lbl">РћС‡РєРѕРІ</div></div>
-        <div class="stat-box"><div class="num" id="statStreak">7</div><div class="lbl">Р›СѓС‡С€Р°СЏ СЃРµСЂРёСЏ</div></div>
+        <div class="stat-box"><div class="num" id="statSolved">42</div><div class="lbl">Решено задач</div></div>
+        <div class="stat-box"><div class="num" id="statCorrect">38</div><div class="lbl">Правильных</div></div>
+        <div class="stat-box"><div class="num" id="statPoints">380</div><div class="lbl">Очков</div></div>
+        <div class="stat-box"><div class="num" id="statStreak">7</div><div class="lbl">Лучшая серия</div></div>
       </div>
     </div>
 
     <div class="pcard fade-up">
-      <h3>Р”РѕСЃС‚РёР¶РµРЅРёСЏ</h3>
+      <h3>Достижения</h3>
       <div class="ach-grid" id="achGrid">
-        <div class="ach-item"><div class="ach-icon">рџЏ…</div><div><div class="ach-title">РџРµСЂРІРѕРµ СЂРµС€РµРЅРёРµ</div><div class="ach-desc">Р РµС€Рё РїРµСЂРІСѓСЋ Р·Р°РґР°С‡Сѓ</div></div></div>
-        <div class="ach-item"><div class="ach-icon">рџ”µ</div><div><div class="ach-title">РќРѕРІРёС‡РѕРє</div><div class="ach-desc">Р РµС€Рё 10 Р·Р°РґР°С‡</div></div></div>
-        <div class="ach-item"><div class="ach-icon">рџ”Ґ</div><div><div class="ach-title">РЎРµСЂРёСЏ РїРѕР±РµРґ</div><div class="ach-desc">5 Р·Р°РґР°С‡ РїРѕРґСЂСЏРґ</div></div></div>
-        <div class="ach-item"><div class="ach-icon">в­ђ</div><div><div class="ach-title">РљРѕР»Р»РµРєС†РёРѕРЅРµСЂ</div><div class="ach-desc">РќР°Р±РµСЂРё 100 РѕС‡РєРѕРІ</div></div></div>
+        <div class="ach-item"><div class="ach-icon">🏅</div><div><div class="ach-title">Первое решение</div><div class="ach-desc">Реши первую задачу</div></div></div>
+        <div class="ach-item"><div class="ach-icon">🔵</div><div><div class="ach-title">Новичок</div><div class="ach-desc">Реши 10 задач</div></div></div>
+        <div class="ach-item"><div class="ach-icon">🔥</div><div><div class="ach-title">Серия побед</div><div class="ach-desc">5 задач подряд</div></div></div>
+        <div class="ach-item"><div class="ach-icon">⭐</div><div><div class="ach-title">Коллекционер</div><div class="ach-desc">Набери 100 очков</div></div></div>
       </div>
     </div>
 
     <div class="pcard fade-up">
-      <h3>РџРѕСЃР»РµРґРЅРёРµ СЂРµС€РµРЅРёСЏ</h3>
+      <h3>Последние решения</h3>
       <div id="solutionsList">
         <div class="solution-row">
-          <div><div style="font-weight:600">Р—Р°РґР°С‡Р° РїРѕ РјР°С‚РµРјР°С‚РёРєРµ</div><div style="font-size:12px;color:var(--text3)">РјР°С‚РµРјР°С‚РёРєР° В· СЃСЂРµРґРЅСЏСЏ</div></div>
-          <span class="solution-ok">вњ“</span>
+          <div><div style="font-weight:600">Задача по математике</div><div style="font-size:12px;color:var(--text3)">математика · средняя</div></div>
+          <span class="solution-ok">✓</span>
         </div>
         <div class="solution-row">
-          <div><div style="font-weight:600">Р—Р°РґР°С‡Р° РїРѕ С„РёР·РёРєРµ</div><div style="font-size:12px;color:var(--text3)">С„РёР·РёРєР° В· Р»С‘РіРєР°СЏ</div></div>
-          <span class="solution-ok">вњ“</span>
+          <div><div style="font-weight:600">Задача по физике</div><div style="font-size:12px;color:var(--text3)">физика · лёгкая</div></div>
+          <span class="solution-ok">✓</span>
         </div>
         <div class="solution-row">
-          <div><div style="font-weight:600">Р—Р°РґР°С‡Р° РїРѕ РёРЅС„РѕСЂРјР°С‚РёРєРµ</div><div style="font-size:12px;color:var(--text3)">РёРЅС„РѕСЂРјР°С‚РёРєР° В· СЃР»РѕР¶РЅР°СЏ</div></div>
-          <span class="solution-ok">вњ“</span>
+          <div><div style="font-weight:600">Задача по информатике</div><div style="font-size:12px;color:var(--text3)">информатика · сложная</div></div>
+          <span class="solution-ok">✓</span>
         </div>
       </div>
     </div>
@@ -187,18 +187,18 @@
 <div class="modal-overlay" id="editModal">
   <div class="modal">
     <div class="modal-header">
-      <h2>Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РїСЂРѕС„РёР»СЊ</h2>
-      <button class="modal-close" id="closeModal">Г—</button>
+      <h2>Редактировать профиль</h2>
+      <button class="modal-close" id="closeModal">×</button>
     </div>
-    <div class="form-row"><label>РџРѕР»РЅРѕРµ РёРјСЏ</label><input class="input" id="editName" type="text"></div>
-    <div class="form-row"><label>РЁРєРѕР»Р°</label><input class="input" id="editSchool" type="text"></div>
-    <div class="form-row"><label>РљР»Р°СЃСЃ</label><input class="input" id="editGrade" type="number" min="1" max="11"></div>
-    <div class="form-row"><label>Рћ СЃРµР±Рµ</label><textarea class="input" id="editBio" rows="3" style="resize:vertical"></textarea></div>
+    <div class="form-row"><label>Полное имя</label><input class="input" id="editName" type="text"></div>
+    <div class="form-row"><label>Школа</label><input class="input" id="editSchool" type="text"></div>
+    <div class="form-row"><label>Класс</label><input class="input" id="editGrade" type="number" min="1" max="11"></div>
+    <div class="form-row"><label>О себе</label><textarea class="input" id="editBio" rows="3" style="resize:vertical"></textarea></div>
     <div class="form-row"><label>Telegram</label><input class="input" id="editTelegram" type="text" placeholder="@username"></div>
     <div class="form-row"><label>VK</label><input class="input" id="editVk" type="text"></div>
     <div class="modal-btns">
-      <button class="btn btn-accent" id="saveProfileBtn">РЎРѕС…СЂР°РЅРёС‚СЊ</button>
-      <button class="btn btn-outline" id="cancelEditBtn">РћС‚РјРµРЅР°</button>
+      <button class="btn btn-accent" id="saveProfileBtn">Сохранить</button>
+      <button class="btn btn-outline" id="cancelEditBtn">Отмена</button>
     </div>
   </div>
 </div>
@@ -221,7 +221,7 @@ let userData = null;
 function applyUserData(u) {
   userData = u;
   document.getElementById('profileName').textContent = u.full_name || u.username;
-  document.getElementById('profileSchool').textContent = [u.school, u.grade ? u.grade+' РєР»Р°СЃСЃ' : ''].filter(Boolean).join(', ');
+  document.getElementById('profileSchool').textContent = [u.school, u.grade ? u.grade+' класс' : ''].filter(Boolean).join(', ');
   document.getElementById('profileRating').textContent = u.rating || 1000;
   if (u.avatar_url) document.getElementById('profileAvatar').src = u.avatar_url;
   if (u.bio) {
@@ -246,13 +246,13 @@ function applyStats(s) {
 
 function applySolutions(list) {
   if (!list?.length) {
-    document.getElementById('solutionsList').innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:14px">РџРѕРєР° РЅРµС‚ СЂРµС€РµРЅРёР№</div>';
+    document.getElementById('solutionsList').innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:14px">Пока нет решений</div>';
     return;
   }
   document.getElementById('solutionsList').innerHTML = list.map(s => `
     <div class="solution-row">
-      <div><div style="font-weight:600;font-size:14px">${s.task_title||''}</div><div style="font-size:12px;color:var(--text3)">${s.subject||''} В· ${s.difficulty||''}</div></div>
-      <span class="solution-ok">вњ“</span>
+      <div><div style="font-weight:600;font-size:14px">${s.task_title||''}</div><div style="font-size:12px;color:var(--text3)">${s.subject||''} · ${s.difficulty||''}</div></div>
+      <span class="solution-ok">✓</span>
     </div>`).join('');
 }
 
@@ -260,10 +260,10 @@ function applyAchievements(list) {
   if (!list?.length) return;
   document.getElementById('achGrid').innerHTML = list.map(a => `
     <div class="ach-item" style="${a.unlocked ? '' : 'opacity:.45;filter:grayscale(.8)'}">
-      <div class="ach-icon">${a.emoji || 'в­ђ'}</div>
+      <div class="ach-icon">${a.emoji || '⭐'}</div>
       <div>
         <div class="ach-title">${a.title}</div>
-        <div class="ach-desc">${a.description}${a.unlocked ? '' : ' <span style="color:var(--accent);font-size:11px">вЂ” РЅРµ СЂР°Р·Р±Р»РѕРєРёСЂРѕРІР°РЅРѕ</span>'}</div>
+        <div class="ach-desc">${a.description}${a.unlocked ? '' : ' <span style="color:var(--accent);font-size:11px">— не разблокировано</span>'}</div>
       </div>
     </div>`).join('');
 }
@@ -272,7 +272,7 @@ async function loadProfile() {
   const meStr = localStorage.getItem('user');
   const me = meStr ? JSON.parse(meStr) : null;
   
-  // Р•СЃР»Рё СЃРјРѕС‚СЂРёРј С‡СѓР¶РѕР№ РїСЂРѕС„РёР»СЊ (id РІ URL РЅРµ СЃРѕРІРїР°РґР°РµС‚ СЃ РЅР°С€РёРј)
+  // Если смотрим чужой профиль (id в URL не совпадает с нашим)
   const isOwnProfile = !targetId || (me && me.id == targetId);
 
   try {
@@ -281,7 +281,7 @@ async function loadProfile() {
       const r = await fetch(`${API_URL}/auth/me`, { headers:{ Authorization: token } });
       if (!r.ok) throw new Error();
       u = await r.json();
-      // РџРѕРєР°Р·С‹РІР°РµРј РєРЅРѕРїРєРё СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ
+      // Показываем кнопки редактирования
       document.getElementById('editProfileBtn').style.display = 'block';
       document.getElementById('avatarEditBtn').style.display = 'flex';
     } else {
@@ -289,7 +289,7 @@ async function loadProfile() {
       const r = await fetch(`${API_URL}/users/${targetId}/profile`, { headers });
       if (!r.ok) throw new Error();
       u = await r.json();
-      // РЎРєСЂС‹РІР°РµРј РєРЅРѕРїРєРё СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ
+      // Скрываем кнопки редактирования
       document.getElementById('editProfileBtn').style.display = 'none';
       document.getElementById('avatarEditBtn').style.display = 'none';
     }
@@ -297,7 +297,7 @@ async function loadProfile() {
     applyUserData(u);
     const userId = u.id;
     
-    // Stats, solutions, achievements are public endpoints вЂ” no auth required
+    // Stats, solutions, achievements are public endpoints — no auth required
     const [sR, solR, achR] = await Promise.allSettled([
       fetch(`${API_URL}/users/${userId}/stats`),
       fetch(`${API_URL}/users/${userId}/solutions`),
@@ -344,7 +344,7 @@ document.getElementById('saveProfileBtn').addEventListener('click', async () => 
       })
     });
     if (r.ok) { document.getElementById('editModal').classList.remove('open'); loadProfile(); }
-    else alert('РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ');
+    else alert('Ошибка сохранения');
   } catch { document.getElementById('editModal').classList.remove('open'); }
 });
 
@@ -374,4 +374,3 @@ loadProfile();
 </script>
 </body>
 </html>
-
