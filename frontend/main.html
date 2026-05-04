@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -148,7 +148,7 @@
 
 <div class="stats">
   <div class="stat-item fade-up"><div class="stat-num" id="sn0">—</div><div class="stat-label">Задач в каталоге</div></div>
-  <div class="stat-item fade-up"><div class="stat-num" id="sn1">—</div><div class="stat-label">Участников</div></div>
+  <div class="stat-item fade-up"><div class="stat-num" id="sn1">—</div><div class="stat-label">Пользователей</div></div>
   <div class="stat-item fade-up"><div class="stat-num" id="sn2">14</div><div class="stat-label">Предметов</div></div>
   <div class="stat-item fade-up"><div class="stat-num" id="sn3">—</div><div class="stat-label">Решений отправлено</div></div>
 </div>
@@ -247,7 +247,7 @@ async function loadDailyTask() {
     const data = await r.json();
     const tasks = (data.tasks || []).filter(t => t.problem_statement);
     if (!tasks.length) throw new Error();
-    const dayIdx = Math.floor(Date.now() / 86400000) % tasks.length;
+    const dayIdx = Math.floor((Date.now() + 10800000) / 86400000) % tasks.length;
     dailyTask = tasks[dayIdx];
     const diff = dailyTask.difficulty || 'medium';
     document.getElementById('dailyTaskTitle').textContent = dailyTask.problem_statement.slice(0, 160) + (dailyTask.problem_statement.length > 160 ? '…' : '');
@@ -262,7 +262,7 @@ async function loadDailyTask() {
     // Make card clickable — navigate to training with task
     document.getElementById('dailyCard').addEventListener('click', (e) => {
       if (e.target.closest('input, button')) return;
-      window.location.href = `training.html?task_id=${dailyTask.id}`;
+      window.location.href = `training.html?task=${dailyTask.id}`;
     });
   } catch {
     document.getElementById('dailyTaskTitle').textContent = 'Не удалось загрузить задачу';

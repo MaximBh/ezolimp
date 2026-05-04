@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -424,6 +424,7 @@ async function loadTaskVisual(task, seq) {
     if (!fallbackPdf) card.style.display = 'none';
   }
 }
+let isDailyTask = false;
 
 async function loadTask(id=null) {
   const seq = ++visualRequestSeq;
@@ -435,6 +436,7 @@ async function loadTask(id=null) {
   solutionTaskId = null;
   solutionSnapshot = null;
   solutionRequestSeq += 1;
+  isDailyTask = false;
   document.getElementById('taskTitle').textContent = 'Загрузка...';
   document.getElementById('taskMeta').innerHTML = '';
   document.getElementById('taskStatement').textContent = '';
@@ -446,13 +448,24 @@ async function loadTask(id=null) {
 
   try {
     let taskId = id;
-    if (!taskId) {
+    
+    // Check for daily task
+    try {
       const listResp = await fetch(`${API_URL}/tasks`);
-      if (!listResp.ok) throw new Error();
-      const listData = await listResp.json();
-      const randomTask = (listData.tasks||[])[Math.floor(Math.random()*(listData.tasks||[]).length)];
-      taskId = randomTask ? randomTask.id : null;
-    }
+      if (listResp.ok) {
+        const listData = await listResp.json();
+        const validTasks = (listData.tasks||[]).filter(t => t.problem_statement);
+        if (validTasks.length) {
+          const dayIdx = Math.floor((Date.now() + 10800000) / 86400000) % validTasks.length;
+          if (taskId == validTasks[dayIdx].id) isDailyTask = true;
+          if (!taskId) {
+            taskId = validTasks[Math.floor(Math.random() * validTasks.length)]?.id || null;
+            if (taskId == validTasks[dayIdx].id) isDailyTask = true;
+          }
+        }
+      }
+    } catch(e) {}
+
     if (!taskId) {
       document.getElementById('taskTitle').textContent = 'Задачи не найдены';
       return;
@@ -469,12 +482,15 @@ async function loadTask(id=null) {
 
     const diff = currentTask.difficulty || '';
     const cls = { easy:'badge-easy', medium:'badge-medium', hard:'badge-hard' }[diff] || '';
+    const bonusPoints = isDailyTask ? Math.round((currentTask.points || 10) * 1.5) : (currentTask.points || 10);
+    
     document.getElementById('taskTitle').textContent = currentTask.title;
     document.getElementById('taskMeta').innerHTML = `
+      ${isDailyTask ? '<span class="badge" style="background:var(--accent-l);color:var(--accent);border:1px solid var(--accent-m)">🔥 Задача дня +50% баллов</span>' : ''}
       <span class="badge ${cls}">${diffLabels[diff]||diff}</span>
       <span class="badge" style="background:var(--bg2);color:var(--text2)">${currentTask.subject||''}</span>
       ${currentTask.grade ? `<span class="badge" style="background:var(--bg2);color:var(--text2)">${currentTask.grade} класс</span>` : ''}
-      <span class="badge" style="background:var(--bg2);color:var(--text2)">${currentTask.points||10} баллов</span>`;
+      <span class="badge" style="background:var(--bg2);color:var(--text2)">${bonusPoints} баллов</span>`;
     document.getElementById('taskStatement').textContent = stripSource(currentTask.full_problem_statement || currentTask.problem_statement || '');
     loadTaskVisual(currentTask, seq);
     document.getElementById('answerSection').style.display = 'block';
@@ -603,7 +619,8 @@ async function runPendingAnswerCheck() {
 
   pendingAnswerInFlight = true;
   try {
-    const r = await fetch(`${API_URL}/tasks/${pendingAnswerCheck.taskId}/solve?user_answer=${encodeURIComponent(pendingAnswerCheck.answer)}`, {
+    const isDailyParam = isDailyTask ? '&is_daily=true' : '';
+    const r = await fetch(`${API_URL}/tasks/${pendingAnswerCheck.taskId}/solve?user_answer=${encodeURIComponent(pendingAnswerCheck.answer)}${isDailyParam}`, {
       method:'POST', headers:{ Authorization: pendingAnswerCheck.token }
     });
     const result = await r.json();
@@ -664,7 +681,8 @@ async function submitAnswer() {
   btn.disabled = true;
   btn.textContent = '\u041e\u0442\u043f\u0440\u0430\u0432\u043a\u0430...';
   try {
-    const r = await fetch(`${API_URL}/tasks/${currentTask.id}/solve?user_answer=${encodeURIComponent(ans)}`, {
+    const isDailyParam = isDailyTask ? '&is_daily=true' : '';
+    const r = await fetch(`${API_URL}/tasks/${currentTask.id}/solve?user_answer=${encodeURIComponent(ans)}${isDailyParam}`, {
       method:'POST', headers:{ Authorization: token }
     });
     const result = await r.json();

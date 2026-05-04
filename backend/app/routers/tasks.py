@@ -553,11 +553,11 @@ def solve_task(task_id: int, user_answer: str, is_daily: bool = False, current_u
         # Бонус +50% за задачу дня
         daily_bonus_applied = False
         if is_daily:
-            # Проверка: эта ли задача сегодня дневная (детерминированный выбор, как на фронте)
+            # Проверка: эта ли задача сегодня дневная
             import time
-            all_task_ids = [t.id for t in db.query(Task.id).order_by(Task.id).all()]
+            all_task_ids = [t.id for t in db.query(Task.id).filter(Task.problem_statement != None, Task.problem_statement != '').order_by(Task.id).all()]
             if all_task_ids:
-                day_idx = int(time.time() // 86400) % len(all_task_ids)
+                day_idx = int((time.time() + 10800) // 86400) % len(all_task_ids)
                 if all_task_ids[day_idx] == task_id:
                     adjusted_points = round(adjusted_points * 1.5)
                     daily_bonus_applied = True
