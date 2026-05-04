@@ -69,7 +69,11 @@ def ensure_local_pdf_path(source_url: str) -> Path:
         tmp_path = cache_path.with_suffix(".tmp")
         if tmp_path.exists():
             tmp_path.unlink(missing_ok=True)
-        urlretrieve(normalized_url, tmp_path)
+            
+        req = Request(normalized_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'})
+        with urlopen(req, timeout=30) as response, open(tmp_path, 'wb') as out_file:
+            out_file.write(response.read())
+            
         tmp_size = tmp_path.stat().st_size if tmp_path.exists() else 0
         if tmp_size <= 0:
             tmp_path.unlink(missing_ok=True)
