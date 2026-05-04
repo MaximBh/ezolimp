@@ -108,16 +108,22 @@ def get_me(current_user: User = Depends(get_current_user)):
 @router.put("/auth/me")
 def update_me(profile_data: UserProfileUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
+        user_to_update = db.query(User).filter(User.id == current_user.id).first()
+        if not user_to_update:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
+            
         for field in ("full_name", "school", "grade", "bio", "phone", "telegram", "vk", "github", "avatar_url"):
             value = getattr(profile_data, field, None)
             if value is not None:
-                setattr(current_user, field, value)
+                setattr(user_to_update, field, value)
         db.commit()
         _invalidate_user_cache(current_user.id)
         return {"message": "Профиль обновлен"}
-    except Exception:
+    except HTTPException:
+        raise
+    except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Ошибка при обновлении профиля")
+        raise HTTPException(status_code=500, detail=f"Ошибка при обновлении профиля: {str(e)}")
 
 
 @router.post("/auth/logout")
