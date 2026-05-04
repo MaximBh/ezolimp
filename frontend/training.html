@@ -1,9 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EzOlimp — Тренировка</title>
+<title>EzOlimp вЂ” РўСЂРµРЅРёСЂРѕРІРєР°</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="shared.css">
 <script>var d=document.documentElement;d.setAttribute("data-theme",localStorage.getItem("ez-theme")||"light");d.classList.add("no-transition");window.addEventListener("load",function(){d.classList.remove("no-transition")})</script>
 <style>
@@ -214,33 +215,33 @@
   <div class="task-box fade-up">
     <div class="task-box-header">
       <div style="display:flex;align-items:center;gap:10px;">
-        <button class="btn btn-outline" id="backBtn" style="display:none">← Назад</button>
-        <h1 id="taskTitle">Загрузка задачи...</h1>
+        <button class="btn btn-outline" id="backBtn" style="display:none">в†ђ РќР°Р·Р°Рґ</button>
+        <h1 id="taskTitle">Р—Р°РіСЂСѓР·РєР° Р·Р°РґР°С‡Рё...</h1>
       </div>
     </div>
     <div class="task-meta-row" id="taskMeta"></div>
     <div class="visual-card" id="taskVisualCard" style="display:none">
       <div class="visual-card-head">
-        <h3>Оригинал условия из PDF</h3>
-        <a id="taskPdfLink" class="visual-pdf-link" href="#" target="_blank" rel="noopener noreferrer" style="display:none">Открыть PDF</a>
+        <h3>РћСЂРёРіРёРЅР°Р» СѓСЃР»РѕРІРёСЏ РёР· PDF</h3>
+        <a id="taskPdfLink" class="visual-pdf-link" href="#" target="_blank" rel="noopener noreferrer" style="display:none">РћС‚РєСЂС‹С‚СЊ PDF</a>
       </div>
       <div id="taskVisualStatus" class="visual-status"></div>
       <div id="taskVisualGrid" class="visual-grid"></div>
     </div>
     <div class="task-statement-card">
-      <h3>Текстовая версия условия</h3>
+      <h3>РўРµРєСЃС‚РѕРІР°СЏ РІРµСЂСЃРёСЏ СѓСЃР»РѕРІРёСЏ</h3>
       <div class="task-statement" id="taskStatement"></div>
     </div>
     <div id="answerSection" style="display:none">
       <div class="answer-row">
-        <input class="input" type="text" id="answerInput" placeholder="Введите ответ...">
-        <button class="btn btn-accent" id="submitBtn">Проверить</button>
-        <button class="btn btn-outline" id="solutionBtn">Решение</button>
+        <input class="input" type="text" id="answerInput" placeholder="Р’РІРµРґРёС‚Рµ РѕС‚РІРµС‚...">
+        <button class="btn btn-accent" id="submitBtn">РџСЂРѕРІРµСЂРёС‚СЊ</button>
+        <button class="btn btn-outline" id="solutionBtn">Р РµС€РµРЅРёРµ</button>
       </div>
       <div class="answer-format-hint" id="answerFormatHint"></div>
       <div id="resultBox"></div>
       <div class="task-report" id="taskReport">
-        <button class="task-report-toggle" id="taskReportToggle" type="button" aria-expanded="false">Нашли ошибку в условии или решении? - напишите нам.</button>
+        <button class="task-report-toggle" id="taskReportToggle" type="button" aria-expanded="false">РќР°С€Р»Рё РѕС€РёР±РєСѓ РІ СѓСЃР»РѕРІРёРё РёР»Рё СЂРµС€РµРЅРёРё? - РЅР°РїРёС€РёС‚Рµ РЅР°Рј.</button>
         <div class="task-report-menu" id="taskReportMenu">
           <a class="task-report-link" href="https://t.me/ezolimp?direct" target="_blank" rel="noopener noreferrer">Telegram</a>
           <a class="task-report-link" href="https://mail.google.com/mail/u/4/#inbox?compose=VpCqJQvtZJlhFFdflqJsCHWfqqKlwMNXfvWHlRGbpLZhsMzXhrlJlvHQmgbKVhqDbWZlrVL" target="_blank" rel="noopener noreferrer">Mail</a>
@@ -250,18 +251,18 @@
   </div>
 
   <div class="hints fade-up">
-    <h3>Подсказки</h3>
+    <h3>РџРѕРґСЃРєР°Р·РєРё</h3>
     <div class="hint-item">
       <div class="hint-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
-      <div class="hint-text">Внимательно прочитай условие задачи перед тем как начать решать</div>
+      <div class="hint-text">Р’РЅРёРјР°С‚РµР»СЊРЅРѕ РїСЂРѕС‡РёС‚Р°Р№ СѓСЃР»РѕРІРёРµ Р·Р°РґР°С‡Рё РїРµСЂРµРґ С‚РµРј РєР°Рє РЅР°С‡Р°С‚СЊ СЂРµС€Р°С‚СЊ</div>
     </div>
     <div class="hint-item">
       <div class="hint-icon"><svg viewBox="0 0 24 24"><polyline points="20,6 9,17 4,12"/></svg></div>
-      <div class="hint-text">Проверь правильность формата ответа — иногда нужно целое число, иногда дробь</div>
+      <div class="hint-text">РџСЂРѕРІРµСЂСЊ РїСЂР°РІРёР»СЊРЅРѕСЃС‚СЊ С„РѕСЂРјР°С‚Р° РѕС‚РІРµС‚Р° вЂ” РёРЅРѕРіРґР° РЅСѓР¶РЅРѕ С†РµР»РѕРµ С‡РёСЃР»Рѕ, РёРЅРѕРіРґР° РґСЂРѕР±СЊ</div>
     </div>
     <div class="hint-item">
       <div class="hint-icon"><svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="8" y1="6" x2="10" y2="6"/></svg></div>
-      <div class="hint-text">Используй черновик для промежуточных вычислений</div>
+      <div class="hint-text">РСЃРїРѕР»СЊР·СѓР№ С‡РµСЂРЅРѕРІРёРє РґР»СЏ РїСЂРѕРјРµР¶СѓС‚РѕС‡РЅС‹С… РІС‹С‡РёСЃР»РµРЅРёР№</div>
     </div>
   </div>
 
@@ -276,7 +277,7 @@
 renderNav('training.html');
 renderFooter();
 
-const diffLabels = { easy:'Лёгкая', medium:'Средняя', hard:'Сложная' };
+const diffLabels = { easy:'Р›С‘РіРєР°СЏ', medium:'РЎСЂРµРґРЅСЏСЏ', hard:'РЎР»РѕР¶РЅР°СЏ' };
 let currentTask = null;
 let visualRequestSeq = 0;
 let solutionRequestSeq = 0;
@@ -299,24 +300,24 @@ function renderAiMarkdown(text) {
   let s = escHtml(String(text ?? ''));
   // Remove any leftover [CONTINUE] markers
   s = s.replace(/\s*\[CONTINUE\]\s*$/gi, '').trim();
-  // Rejoin "Итоговый\nответ:" split across lines into one line and rename to Ответ:
-  s = s.replace(/(итоговый)\s*\n\s*(ответ\s*:)/gi, 'Ответ:');
-  s = s.replace(/итоговый\s+ответ\s*:/gi, 'Ответ:');
-  // Rejoin "Ответ:\n<что-то>"
-  s = s.replace(/(ответ\s*:)\s*\n\s*/gi, '$1 ');
-  // Ensure "Ответ:" starts on its own line
-  s = s.replace(/([^\n])(\s*)(\*\*)?(?=ответ\s*:)/gi, (m, before) => before + '\n\n');
-  // Force newlines before 'Шаг X:' or 'X) ' if the model clumped them together
-  s = s.replace(/([.!?;])\s+(Шаг\s+\d+:)/gi, '$1\n$2');
-  s = s.replace(/([.!?;])\s+(\d+\)\s*(?:Идея|Пошаговое|Решение))/gi, '$1\n$2');
-  // Bold: **text** → <strong>text</strong>
+  // Rejoin "РС‚РѕРіРѕРІС‹Р№\nРѕС‚РІРµС‚:" split across lines into one line and rename to РћС‚РІРµС‚:
+  s = s.replace(/(РёС‚РѕРіРѕРІС‹Р№)\s*\n\s*(РѕС‚РІРµС‚\s*:)/gi, 'РћС‚РІРµС‚:');
+  s = s.replace(/РёС‚РѕРіРѕРІС‹Р№\s+РѕС‚РІРµС‚\s*:/gi, 'РћС‚РІРµС‚:');
+  // Rejoin "РћС‚РІРµС‚:\n<С‡С‚Рѕ-С‚Рѕ>"
+  s = s.replace(/(РѕС‚РІРµС‚\s*:)\s*\n\s*/gi, '$1 ');
+  // Ensure "РћС‚РІРµС‚:" starts on its own line
+  s = s.replace(/([^\n])(\s*)(\*\*)?(?=РѕС‚РІРµС‚\s*:)/gi, (m, before) => before + '\n\n');
+  // Force newlines before 'РЁР°Рі X:' or 'X) ' if the model clumped them together
+  s = s.replace(/([.!?;])\s+(РЁР°Рі\s+\d+:)/gi, '$1\n$2');
+  s = s.replace(/([.!?;])\s+(\d+\)\s*(?:РРґРµСЏ|РџРѕС€Р°РіРѕРІРѕРµ|Р РµС€РµРЅРёРµ))/gi, '$1\n$2');
+  // Bold: **text** в†’ <strong>text</strong>
   s = s.replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>');
-  // Bold bare "Ответ:" and "Итоговый ответ:" lines for emphasis
-  s = s.replace(/^((?:итоговый )?ответ\s*:)/gim, '<strong>$1</strong>');
+  // Bold bare "РћС‚РІРµС‚:" and "РС‚РѕРіРѕРІС‹Р№ РѕС‚РІРµС‚:" lines for emphasis
+  s = s.replace(/^((?:РёС‚РѕРіРѕРІС‹Р№ )?РѕС‚РІРµС‚\s*:)/gim, '<strong>$1</strong>');
   return s;
 }
 function escAttr(v) { return String(v??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
-function stripSource(t) { return (t||'').split('\n').filter(l=>!/^(source|источник)\s*:/i.test(l.trim())).join('\n').trim(); }
+function stripSource(t) { return (t||'').split('\n').filter(l=>!/^(source|РёСЃС‚РѕС‡РЅРёРє)\s*:/i.test(l.trim())).join('\n').trim(); }
 function toApiUrl(path) {
   const value = String(path || '').trim();
   if (!value) return '';
@@ -351,16 +352,16 @@ async function loadTaskVisual(task, seq) {
   const status = document.getElementById('taskVisualStatus');
   const grid = document.getElementById('taskVisualGrid');
   const reasonText = {
-    no_source_pdf: 'У этой задачи не указан исходный PDF, показываем текстовую версию.',
-    source_pdf_unavailable: 'Не удалось получить исходный PDF, показываем текстовую версию.',
-    pdf_renderer_not_installed: 'Рендер PDF отключен на сервере, показываем текстовую версию.',
-    pdf_open_failed: 'Исходный PDF не открылся, показываем текстовую версию.',
-    no_fragments: 'Фрагменты в PDF не найдены, показываем текстовую версию.',
-    render_empty: 'Фрагменты не удалось отрисовать, показываем текстовую версию.',
+    no_source_pdf: 'РЈ СЌС‚РѕР№ Р·Р°РґР°С‡Рё РЅРµ СѓРєР°Р·Р°РЅ РёСЃС…РѕРґРЅС‹Р№ PDF, РїРѕРєР°Р·С‹РІР°РµРј С‚РµРєСЃС‚РѕРІСѓСЋ РІРµСЂСЃРёСЋ.',
+    source_pdf_unavailable: 'РќРµ СѓРґР°Р»РѕСЃСЊ РїРѕР»СѓС‡РёС‚СЊ РёСЃС…РѕРґРЅС‹Р№ PDF, РїРѕРєР°Р·С‹РІР°РµРј С‚РµРєСЃС‚РѕРІСѓСЋ РІРµСЂСЃРёСЋ.',
+    pdf_renderer_not_installed: 'Р РµРЅРґРµСЂ PDF РѕС‚РєР»СЋС‡РµРЅ РЅР° СЃРµСЂРІРµСЂРµ, РїРѕРєР°Р·С‹РІР°РµРј С‚РµРєСЃС‚РѕРІСѓСЋ РІРµСЂСЃРёСЋ.',
+    pdf_open_failed: 'РСЃС…РѕРґРЅС‹Р№ PDF РЅРµ РѕС‚РєСЂС‹Р»СЃСЏ, РїРѕРєР°Р·С‹РІР°РµРј С‚РµРєСЃС‚РѕРІСѓСЋ РІРµСЂСЃРёСЋ.',
+    no_fragments: 'Р¤СЂР°РіРјРµРЅС‚С‹ РІ PDF РЅРµ РЅР°Р№РґРµРЅС‹, РїРѕРєР°Р·С‹РІР°РµРј С‚РµРєСЃС‚РѕРІСѓСЋ РІРµСЂСЃРёСЋ.',
+    render_empty: 'Р¤СЂР°РіРјРµРЅС‚С‹ РЅРµ СѓРґР°Р»РѕСЃСЊ РѕС‚СЂРёСЃРѕРІР°С‚СЊ, РїРѕРєР°Р·С‹РІР°РµРј С‚РµРєСЃС‚РѕРІСѓСЋ РІРµСЂСЃРёСЋ.',
   };
 
   card.style.display = 'block';
-  status.textContent = 'Загружаем визуал условия...';
+  status.textContent = 'Р—Р°РіСЂСѓР¶Р°РµРј РІРёР·СѓР°Р» СѓСЃР»РѕРІРёСЏ...';
   grid.innerHTML = '';
   applyTaskPdfLink(task.source_pdf_url || '');
 
@@ -372,11 +373,11 @@ async function loadTaskVisual(task, seq) {
     }))
     .filter(item => item.url);
   if (attachmentImages.length) {
-    status.textContent = 'Скриншоты условия из PDF.';
+    status.textContent = 'РЎРєСЂРёРЅС€РѕС‚С‹ СѓСЃР»РѕРІРёСЏ РёР· PDF.';
     grid.innerHTML = attachmentImages.map((img, index) => `
       <figure class="visual-fragment">
-        <img src="${escAttr(img.url)}" alt="${escAttr(img.title || `Скрин условия ${index + 1}`)}" loading="${index < 2 ? 'eager' : 'lazy'}" decoding="async">
-        <figcaption>${escHtml(img.title || `Скрин ${index + 1}`)}</figcaption>
+        <img src="${escAttr(img.url)}" alt="${escAttr(img.title || `РЎРєСЂРёРЅ СѓСЃР»РѕРІРёСЏ ${index + 1}`)}" loading="${index < 2 ? 'eager' : 'lazy'}" decoding="async">
+        <figcaption>${escHtml(img.title || `РЎРєСЂРёРЅ ${index + 1}`)}</figcaption>
       </figure>
     `).join('');
     return;
@@ -396,20 +397,20 @@ async function loadTaskVisual(task, seq) {
     if (payload.available && images.length) {
       images.sort((a, b) => (Number(a.order_index) || 0) - (Number(b.order_index) || 0));
       status.textContent = payload.visual_mode === 'bbox'
-        ? 'Фрагменты из оригинального PDF.'
-        : 'Показаны страницы исходного PDF.';
+        ? 'Р¤СЂР°РіРјРµРЅС‚С‹ РёР· РѕСЂРёРіРёРЅР°Р»СЊРЅРѕРіРѕ PDF.'
+        : 'РџРѕРєР°Р·Р°РЅС‹ СЃС‚СЂР°РЅРёС†С‹ РёСЃС…РѕРґРЅРѕРіРѕ PDF.';
       grid.innerHTML = images.map((img, index) => {
         const src = escAttr(toApiUrl(img.url || ''));
         const page = Number(img.page) || '?';
         return `<figure class="visual-fragment">
-          <img src="${src}" alt="Фрагмент условия, страница ${page}" loading="${index < 2 ? 'eager' : 'lazy'}" decoding="async">
-          <figcaption>Страница ${page}</figcaption>
+          <img src="${src}" alt="Р¤СЂР°РіРјРµРЅС‚ СѓСЃР»РѕРІРёСЏ, СЃС‚СЂР°РЅРёС†Р° ${page}" loading="${index < 2 ? 'eager' : 'lazy'}" decoding="async">
+          <figcaption>РЎС‚СЂР°РЅРёС†Р° ${page}</figcaption>
         </figure>`;
       }).join('');
       return;
     }
 
-    status.textContent = reasonText[payload.reason] || 'PDF-визуал недоступен, показываем текстовую версию.';
+    status.textContent = reasonText[payload.reason] || 'PDF-РІРёР·СѓР°Р» РЅРµРґРѕСЃС‚СѓРїРµРЅ, РїРѕРєР°Р·С‹РІР°РµРј С‚РµРєСЃС‚РѕРІСѓСЋ РІРµСЂСЃРёСЋ.';
     grid.innerHTML = '';
     if (!sourcePdfUrl) card.style.display = 'none';
   } catch {
@@ -417,8 +418,8 @@ async function loadTaskVisual(task, seq) {
     const fallbackPdf = task.source_pdf_url || '';
     applyTaskPdfLink(fallbackPdf);
     status.textContent = fallbackPdf
-      ? 'Не удалось загрузить фрагменты. Можно открыть оригинальный PDF.'
-      : 'PDF-визуал сейчас недоступен, показываем текстовую версию.';
+      ? 'РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ С„СЂР°РіРјРµРЅС‚С‹. РњРѕР¶РЅРѕ РѕС‚РєСЂС‹С‚СЊ РѕСЂРёРіРёРЅР°Р»СЊРЅС‹Р№ PDF.'
+      : 'PDF-РІРёР·СѓР°Р» СЃРµР№С‡Р°СЃ РЅРµРґРѕСЃС‚СѓРїРµРЅ, РїРѕРєР°Р·С‹РІР°РµРј С‚РµРєСЃС‚РѕРІСѓСЋ РІРµСЂСЃРёСЋ.';
     grid.innerHTML = '';
     if (!fallbackPdf) card.style.display = 'none';
   }
@@ -434,7 +435,7 @@ async function loadTask(id=null) {
   solutionTaskId = null;
   solutionSnapshot = null;
   solutionRequestSeq += 1;
-  document.getElementById('taskTitle').textContent = 'Загрузка...';
+  document.getElementById('taskTitle').textContent = 'Р—Р°РіСЂСѓР·РєР°...';
   document.getElementById('taskMeta').innerHTML = '';
   document.getElementById('taskStatement').textContent = '';
   document.getElementById('answerSection').style.display = 'none';
@@ -453,14 +454,14 @@ async function loadTask(id=null) {
       taskId = randomTask ? randomTask.id : null;
     }
     if (!taskId) {
-      document.getElementById('taskTitle').textContent = 'Задачи не найдены';
+      document.getElementById('taskTitle').textContent = 'Р—Р°РґР°С‡Рё РЅРµ РЅР°Р№РґРµРЅС‹';
       return;
     }
     const r = await fetch(`${API_URL}/tasks/${taskId}?enrich=true`);
     if (!r.ok) throw new Error();
     currentTask = await r.json();
     if (seq !== visualRequestSeq) return;
-    if (!currentTask) { document.getElementById('taskTitle').textContent = 'Задачи не найдены'; return; }
+    if (!currentTask) { document.getElementById('taskTitle').textContent = 'Р—Р°РґР°С‡Рё РЅРµ РЅР°Р№РґРµРЅС‹'; return; }
 
     // Show back button if there's a previous page to return to
     const backBtn = document.getElementById('backBtn');
@@ -472,8 +473,8 @@ async function loadTask(id=null) {
     document.getElementById('taskMeta').innerHTML = `
       <span class="badge ${cls}">${diffLabels[diff]||diff}</span>
       <span class="badge" style="background:var(--bg2);color:var(--text2)">${currentTask.subject||''}</span>
-      ${currentTask.grade ? `<span class="badge" style="background:var(--bg2);color:var(--text2)">${currentTask.grade} класс</span>` : ''}
-      <span class="badge" style="background:var(--bg2);color:var(--text2)">${currentTask.points||10} баллов</span>`;
+      ${currentTask.grade ? `<span class="badge" style="background:var(--bg2);color:var(--text2)">${currentTask.grade} РєР»Р°СЃСЃ</span>` : ''}
+      <span class="badge" style="background:var(--bg2);color:var(--text2)">${currentTask.points||10} Р±Р°Р»Р»РѕРІ</span>`;
     document.getElementById('taskStatement').textContent = stripSource(currentTask.full_problem_statement || currentTask.problem_statement || '');
     loadTaskVisual(currentTask, seq);
     document.getElementById('answerSection').style.display = 'block';
@@ -482,7 +483,7 @@ async function loadTask(id=null) {
     startSolutionGenerationForCurrentTask(false, false);
   } catch {
     if (seq !== visualRequestSeq) return;
-    document.getElementById('taskTitle').textContent = 'Ошибка загрузки задачи';
+    document.getElementById('taskTitle').textContent = 'РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё Р·Р°РґР°С‡Рё';
   }
 }
 
@@ -621,7 +622,7 @@ async function runPendingAnswerCheck() {
           pending_ai_check: false,
           ai_check_status: 'unavailable',
           ai_is_correct: null,
-          message: 'Проверка заняла слишком много времени. Попробуйте отправить ответ еще раз.',
+          message: 'РџСЂРѕРІРµСЂРєР° Р·Р°РЅСЏР»Р° СЃР»РёС€РєРѕРј РјРЅРѕРіРѕ РІСЂРµРјРµРЅРё. РџРѕРїСЂРѕР±СѓР№С‚Рµ РѕС‚РїСЂР°РІРёС‚СЊ РѕС‚РІРµС‚ РµС‰Рµ СЂР°Р·.',
         });
       }
       return;
@@ -641,7 +642,7 @@ async function runPendingAnswerCheck() {
         pending_ai_check: false,
         vsosh_check_status: 'unavailable',
         ai_check_status: 'unavailable',
-        message: 'Не удалось завершить проверку. Попробуйте снова.',
+        message: 'РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РІРµСЂС€РёС‚СЊ РїСЂРѕРІРµСЂРєСѓ. РџРѕРїСЂРѕР±СѓР№С‚Рµ СЃРЅРѕРІР°.',
         points_earned: 0,
       });
     }
@@ -652,7 +653,7 @@ async function runPendingAnswerCheck() {
 
 async function submitAnswer() {
   const token = localStorage.getItem('token');
-  if (!token) { alert('Войдите в систему'); return; }
+  if (!token) { alert('Р’РѕР№РґРёС‚Рµ РІ СЃРёСЃС‚РµРјСѓ'); return; }
   if (!currentTask) return;
   const ans = document.getElementById('answerInput').value.trim();
   if (!ans) return;
@@ -684,10 +685,10 @@ async function submitAnswer() {
     }
     renderSolveResult(result);
   } catch {
-    alert('Ошибка проверки');
+    alert('РћС€РёР±РєР° РїСЂРѕРІРµСЂРєРё');
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Проверить';
+    btn.textContent = 'РџСЂРѕРІРµСЂРёС‚СЊ';
   }
 }
 
@@ -757,9 +758,9 @@ function isAiTemplateText(text) {
 function buildAiErrorMessage(sol, aiStatus) {
   const backendError = String(sol?.ai_solution_error || '').trim();
   if (aiStatus === 'timeout') {
-    return backendError || 'Генерация превысила лимит времени и была остановлена.';
+    return backendError || 'Р“РµРЅРµСЂР°С†РёСЏ РїСЂРµРІС‹СЃРёР»Р° Р»РёРјРёС‚ РІСЂРµРјРµРЅРё Рё Р±С‹Р»Р° РѕСЃС‚Р°РЅРѕРІР»РµРЅР°.';
   }
-  return backendError || 'Не удалось сгенерировать решение. Попробуйте позже.';
+  return backendError || 'РќРµ СѓРґР°Р»РѕСЃСЊ СЃРіРµРЅРµСЂРёСЂРѕРІР°С‚СЊ СЂРµС€РµРЅРёРµ. РџРѕРїСЂРѕР±СѓР№С‚Рµ РїРѕР·Р¶Рµ.';
 }
 
 function isRetryableAiStatus(aiStatus) {
@@ -828,10 +829,10 @@ function isSolutionGenerating(sol, rawAiText = '') {
 function extractFinalAnswerFromAiText(text) {
   const raw = String(text || '').trim();
   if (!raw) return '';
-  // Match Russian "Итоговый ответ:" / "Ответ:" and English "Final answer:"
+  // Match Russian "РС‚РѕРіРѕРІС‹Р№ РѕС‚РІРµС‚:" / "РћС‚РІРµС‚:" and English "Final answer:"
   // Use global flag to find ALL matches and take the last one (avoids grabbing trailing text on same line)
   const patterns = [
-    /(?:^|\n)\s*(?:[-*\u2022]\s*)?(?:\*\*)?(?:итоговый\s+)?ответ(?:\*\*)?\s*[:\-]\s*([^\n\r]+)/gim,
+    /(?:^|\n)\s*(?:[-*\u2022]\s*)?(?:\*\*)?(?:РёС‚РѕРіРѕРІС‹Р№\s+)?РѕС‚РІРµС‚(?:\*\*)?\s*[:\-]\s*([^\n\r]+)/gim,
     /(?:^|\n)\s*(?:[-*\u2022]\s*)?(?:\*\*)?final\s+answer(?:\*\*)?\s*[:\-]\s*([^\n\r]+)/gim,
   ];
   for (const pattern of patterns) {
@@ -853,7 +854,7 @@ function extractFinalAnswerFromAiText(text) {
     if (!candidate) continue;
     const compact = candidate.replace(/[\s,;:]+/g, '');
     if (!compact) continue;
-    if (!label.includes('answer') && !label.includes('ответ') && (candidate.length > 160 || candidate.split(/\s+/).length > 10)) {
+    if (!label.includes('answer') && !label.includes('РѕС‚РІРµС‚') && (candidate.length > 160 || candidate.split(/\s+/).length > 10)) {
       continue;
     }
     return candidate;
@@ -1016,7 +1017,7 @@ async function startSolutionGenerationForCurrentTask(forceRegenerate = false, re
     clearSolutionPolling();
     if (solutionVisible) {
       resetSolutionGenerationTimer();
-      alert('Ошибка получения решения');
+      alert('РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ СЂРµС€РµРЅРёСЏ');
     }
   }
 }
@@ -1026,7 +1027,7 @@ async function showSolution(forceRegenerate = false) {
     forceRegenerate = false;
   }
   const token = localStorage.getItem('token');
-  if (!token) { alert('Войдите в систему'); return; }
+  if (!token) { alert('Р’РѕР№РґРёС‚Рµ РІ СЃРёСЃС‚РµРјСѓ'); return; }
   if (!currentTask) return;
   if (solutionVisible && !forceRegenerate) {
     collapseSolutionView();
@@ -1058,4 +1059,5 @@ loadTask(taskId);
 </script>
 </body>
 </html>
+
 

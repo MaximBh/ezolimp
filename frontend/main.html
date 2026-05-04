@@ -1,9 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EzOlimp — Главная</title>
+<title>EzOlimp вЂ” Р“Р»Р°РІРЅР°СЏ</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="shared.css">
 <script>var d=document.documentElement;d.setAttribute("data-theme",localStorage.getItem("ez-theme")||"light");d.classList.add("no-transition");window.addEventListener("load",function(){d.classList.remove("no-transition")})</script>
 <style>
@@ -114,98 +115,98 @@
 
 <section class="hero">
   <div class="hero-text-wrap">
-    <div class="hero-label">Платформа для олимпиадников</div>
-    <h1>Готовься к олимпиадам<br><em>умнее и быстрее</em></h1>
-    <p class="hero-sub">Решай задачи, соревнуйся в PvP-режиме и следи за прогрессом. Автоматическая проверка и рейтинг Elo.</p>
+    <div class="hero-label">РџР»Р°С‚С„РѕСЂРјР° РґР»СЏ РѕР»РёРјРїРёР°РґРЅРёРєРѕРІ</div>
+    <h1>Р“РѕС‚РѕРІСЊСЃСЏ Рє РѕР»РёРјРїРёР°РґР°Рј<br><em>СѓРјРЅРµРµ Рё Р±С‹СЃС‚СЂРµРµ</em></h1>
+    <p class="hero-sub">Р РµС€Р°Р№ Р·Р°РґР°С‡Рё, СЃРѕСЂРµРІРЅСѓР№СЃСЏ РІ PvP-СЂРµР¶РёРјРµ Рё СЃР»РµРґРё Р·Р° РїСЂРѕРіСЂРµСЃСЃРѕРј. РђРІС‚РѕРјР°С‚РёС‡РµСЃРєР°СЏ РїСЂРѕРІРµСЂРєР° Рё СЂРµР№С‚РёРЅРі Elo.</p>
     <div class="hero-btns">
-      <a href="catalog.html" class="btn btn-accent">Начать бесплатно</a>
-      <a href="catalog.html" class="btn btn-outline">Смотреть задачи</a>
+      <a href="catalog.html" class="btn btn-accent">РќР°С‡Р°С‚СЊ Р±РµСЃРїР»Р°С‚РЅРѕ</a>
+      <a href="catalog.html" class="btn btn-outline">РЎРјРѕС‚СЂРµС‚СЊ Р·Р°РґР°С‡Рё</a>
     </div>
   </div>
   <div>
-    <div class="task-card" id="dailyCard" style="cursor:pointer" title="Открыть задачу">
+    <div class="task-card" id="dailyCard" style="cursor:pointer" title="РћС‚РєСЂС‹С‚СЊ Р·Р°РґР°С‡Сѓ">
       <div class="task-card-top">
-        <span class="task-card-label">⭐ Задача дня · +50% баллов</span>
-        <span class="task-badge" id="dailyDiff">Средняя</span>
+        <span class="task-card-label">в­ђ Р—Р°РґР°С‡Р° РґРЅСЏ В· +50% Р±Р°Р»Р»РѕРІ</span>
+        <span class="task-badge" id="dailyDiff">РЎСЂРµРґРЅСЏСЏ</span>
       </div>
-      <div class="task-title" id="dailyTaskTitle">Загрузка...</div>
+      <div class="task-title" id="dailyTaskTitle">Р—Р°РіСЂСѓР·РєР°...</div>
       <div class="task-meta" id="dailyTaskMeta"></div>
       <div class="task-input-row">
-        <input class="input" type="text" id="dailyAnswer" placeholder="Введите ответ...">
-        <button class="btn btn-accent" id="dailySubmit" style="white-space:nowrap">Проверить</button>
+        <input class="input" type="text" id="dailyAnswer" placeholder="Р’РІРµРґРёС‚Рµ РѕС‚РІРµС‚...">
+        <button class="btn btn-accent" id="dailySubmit" style="white-space:nowrap">РџСЂРѕРІРµСЂРёС‚СЊ</button>
       </div>
-      <div class="task-input-hint" id="dailyInputHint">Формат ответа: введите один ответ.</div>
-      <div class="task-hint" id="dailyHint">Ответ проверяется автоматически</div>
+      <div class="task-input-hint" id="dailyInputHint">Р¤РѕСЂРјР°С‚ РѕС‚РІРµС‚Р°: РІРІРµРґРёС‚Рµ РѕРґРёРЅ РѕС‚РІРµС‚.</div>
+      <div class="task-hint" id="dailyHint">РћС‚РІРµС‚ РїСЂРѕРІРµСЂСЏРµС‚СЃСЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё</div>
     </div>
   </div>
 
-  <button class="scroll-hint" id="scrollHint" aria-label="Пролистать вниз">
-    <span>листай вниз</span>
+  <button class="scroll-hint" id="scrollHint" aria-label="РџСЂРѕР»РёСЃС‚Р°С‚СЊ РІРЅРёР·">
+    <span>Р»РёСЃС‚Р°Р№ РІРЅРёР·</span>
     <svg viewBox="0 0 24 24" fill="none"><polyline points="6,9 12,15 18,9" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
 </section>
 
 <div class="stats">
-  <div class="stat-item fade-up"><div class="stat-num" id="sn0">—</div><div class="stat-label">Задач в каталоге</div></div>
-  <div class="stat-item fade-up"><div class="stat-num" id="sn1">—</div><div class="stat-label">Участников</div></div>
-  <div class="stat-item fade-up"><div class="stat-num" id="sn2">14</div><div class="stat-label">Предметов</div></div>
-  <div class="stat-item fade-up"><div class="stat-num" id="sn3">—</div><div class="stat-label">Решений отправлено</div></div>
+  <div class="stat-item fade-up"><div class="stat-num" id="sn0">вЂ”</div><div class="stat-label">Р—Р°РґР°С‡ РІ РєР°С‚Р°Р»РѕРіРµ</div></div>
+  <div class="stat-item fade-up"><div class="stat-num" id="sn1">вЂ”</div><div class="stat-label">РЈС‡Р°СЃС‚РЅРёРєРѕРІ</div></div>
+  <div class="stat-item fade-up"><div class="stat-num" id="sn2">14</div><div class="stat-label">РџСЂРµРґРјРµС‚РѕРІ</div></div>
+  <div class="stat-item fade-up"><div class="stat-num" id="sn3">вЂ”</div><div class="stat-label">Р РµС€РµРЅРёР№ РѕС‚РїСЂР°РІР»РµРЅРѕ</div></div>
 </div>
 
 <div class="section">
-  <div class="section-label">Режимы</div>
-  <div class="section-title">Как хочешь — так и учись</div>
-  <div class="section-sub">Тренировка в своём темпе или соревнование в реальном времени</div>
+  <div class="section-label">Р РµР¶РёРјС‹</div>
+  <div class="section-title">РљР°Рє С…РѕС‡РµС€СЊ вЂ” С‚Р°Рє Рё СѓС‡РёСЃСЊ</div>
+  <div class="section-sub">РўСЂРµРЅРёСЂРѕРІРєР° РІ СЃРІРѕС‘Рј С‚РµРјРїРµ РёР»Рё СЃРѕСЂРµРІРЅРѕРІР°РЅРёРµ РІ СЂРµР°Р»СЊРЅРѕРј РІСЂРµРјРµРЅРё</div>
   <div class="modes">
     <a href="pvp.html" class="mode-card fade-up">
-      <div class="mode-tag">Соревнование</div>
-      <h3>PvP режим 1×1</h3>
-      <p>Соревнуйся с другими участниками в реальном времени. Рейтинг по системе Elo. Автоподбор соперника по уровню.</p>
-      <span class="mode-link">Найти соперника →</span>
+      <div class="mode-tag">РЎРѕСЂРµРІРЅРѕРІР°РЅРёРµ</div>
+      <h3>PvP СЂРµР¶РёРј 1Г—1</h3>
+      <p>РЎРѕСЂРµРІРЅСѓР№СЃСЏ СЃ РґСЂСѓРіРёРјРё СѓС‡Р°СЃС‚РЅРёРєР°РјРё РІ СЂРµР°Р»СЊРЅРѕРј РІСЂРµРјРµРЅРё. Р РµР№С‚РёРЅРі РїРѕ СЃРёСЃС‚РµРјРµ Elo. РђРІС‚РѕРїРѕРґР±РѕСЂ СЃРѕРїРµСЂРЅРёРєР° РїРѕ СѓСЂРѕРІРЅСЋ.</p>
+      <span class="mode-link">РќР°Р№С‚Рё СЃРѕРїРµСЂРЅРёРєР° в†’</span>
     </a>
     <a href="training.html" class="mode-card fade-up">
-      <div class="mode-tag">Тренировка</div>
-      <h3>Режим тренировки</h3>
-      <p>Решай задачи в своём темпе. Фильтрация по предмету, классу и сложности. Автоматическая проверка ответов.</p>
-      <span class="mode-link">Начать тренировку →</span>
+      <div class="mode-tag">РўСЂРµРЅРёСЂРѕРІРєР°</div>
+      <h3>Р РµР¶РёРј С‚СЂРµРЅРёСЂРѕРІРєРё</h3>
+      <p>Р РµС€Р°Р№ Р·Р°РґР°С‡Рё РІ СЃРІРѕС‘Рј С‚РµРјРїРµ. Р¤РёР»СЊС‚СЂР°С†РёСЏ РїРѕ РїСЂРµРґРјРµС‚Сѓ, РєР»Р°СЃСЃСѓ Рё СЃР»РѕР¶РЅРѕСЃС‚Рё. РђРІС‚РѕРјР°С‚РёС‡РµСЃРєР°СЏ РїСЂРѕРІРµСЂРєР° РѕС‚РІРµС‚РѕРІ.</p>
+      <span class="mode-link">РќР°С‡Р°С‚СЊ С‚СЂРµРЅРёСЂРѕРІРєСѓ в†’</span>
     </a>
   </div>
 </div>
 
 <div class="section">
-  <div class="section-label">Возможности</div>
-  <div class="section-title">Всё для подготовки</div>
-  <div class="section-sub">Инструменты, которые помогут тебе расти</div>
+  <div class="section-label">Р’РѕР·РјРѕР¶РЅРѕСЃС‚Рё</div>
+  <div class="section-title">Р’СЃС‘ РґР»СЏ РїРѕРґРіРѕС‚РѕРІРєРё</div>
+  <div class="section-sub">РРЅСЃС‚СЂСѓРјРµРЅС‚С‹, РєРѕС‚РѕСЂС‹Рµ РїРѕРјРѕРіСѓС‚ С‚РµР±Рµ СЂР°СЃС‚Рё</div>
   <div class="features">
     <a href="catalog.html" class="feat-card fade-up">
       <div class="feat-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></div>
-      <h4>Каталог задач</h4>
-      <p>Более 1000 задач по 14 предметам с фильтрацией по классу и сложности.</p>
+      <h4>РљР°С‚Р°Р»РѕРі Р·Р°РґР°С‡</h4>
+      <p>Р‘РѕР»РµРµ 1000 Р·Р°РґР°С‡ РїРѕ 14 РїСЂРµРґРјРµС‚Р°Рј СЃ С„РёР»СЊС‚СЂР°С†РёРµР№ РїРѕ РєР»Р°СЃСЃСѓ Рё СЃР»РѕР¶РЅРѕСЃС‚Рё.</p>
     </a>
     <a href="leaderboard.html" class="feat-card fade-up">
       <div class="feat-icon"><svg viewBox="0 0 24 24"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg></div>
-      <h4>Рейтинг Elo</h4>
-      <p>Честная система рейтинга. Соревнуйся с игроками своего уровня.</p>
+      <h4>Р РµР№С‚РёРЅРі Elo</h4>
+      <p>Р§РµСЃС‚РЅР°СЏ СЃРёСЃС‚РµРјР° СЂРµР№С‚РёРЅРіР°. РЎРѕСЂРµРІРЅСѓР№СЃСЏ СЃ РёРіСЂРѕРєР°РјРё СЃРІРѕРµРіРѕ СѓСЂРѕРІРЅСЏ.</p>
     </a>
     <a href="analytics.html" class="feat-card fade-up">
       <div class="feat-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
-      <h4>Аналитика</h4>
-      <p>Следи за прогрессом по предметам и сложности. Видь свои слабые места.</p>
+      <h4>РђРЅР°Р»РёС‚РёРєР°</h4>
+      <p>РЎР»РµРґРё Р·Р° РїСЂРѕРіСЂРµСЃСЃРѕРј РїРѕ РїСЂРµРґРјРµС‚Р°Рј Рё СЃР»РѕР¶РЅРѕСЃС‚Рё. Р’РёРґСЊ СЃРІРѕРё СЃР»Р°Р±С‹Рµ РјРµСЃС‚Р°.</p>
     </a>
     <a href="training.html" class="feat-card fade-up">
       <div class="feat-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg></div>
-      <h4>Лимит времени</h4>
-      <p>Задачи с таймером — тренируй скорость решения как на реальной олимпиаде.</p>
+      <h4>Р›РёРјРёС‚ РІСЂРµРјРµРЅРё</h4>
+      <p>Р—Р°РґР°С‡Рё СЃ С‚Р°Р№РјРµСЂРѕРј вЂ” С‚СЂРµРЅРёСЂСѓР№ СЃРєРѕСЂРѕСЃС‚СЊ СЂРµС€РµРЅРёСЏ РєР°Рє РЅР° СЂРµР°Р»СЊРЅРѕР№ РѕР»РёРјРїРёР°РґРµ.</p>
     </a>
     <a href="pvp.html" class="feat-card fade-up">
       <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-      <h4>PvP матчи</h4>
-      <p>Реальное время, реальный соперник. Побеждай и поднимайся в рейтинге.</p>
+      <h4>PvP РјР°С‚С‡Рё</h4>
+      <p>Р РµР°Р»СЊРЅРѕРµ РІСЂРµРјСЏ, СЂРµР°Р»СЊРЅС‹Р№ СЃРѕРїРµСЂРЅРёРє. РџРѕР±РµР¶РґР°Р№ Рё РїРѕРґРЅРёРјР°Р№СЃСЏ РІ СЂРµР№С‚РёРЅРіРµ.</p>
     </a>
     <a href="profile.html" class="feat-card fade-up">
       <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
-      <h4>Достижения</h4>
-      <p>Разблокируй награды за решённые задачи и победы в PvP.</p>
+      <h4>Р”РѕСЃС‚РёР¶РµРЅРёСЏ</h4>
+      <p>Р Р°Р·Р±Р»РѕРєРёСЂСѓР№ РЅР°РіСЂР°РґС‹ Р·Р° СЂРµС€С‘РЅРЅС‹Рµ Р·Р°РґР°С‡Рё Рё РїРѕР±РµРґС‹ РІ PvP.</p>
     </a>
   </div>
 </div>
@@ -220,7 +221,7 @@
 renderNav('main.html');
 renderFooter();
 
-// скролл-хинт скрывается при клике и при прокрутке вниз
+// СЃРєСЂРѕР»Р»-С…РёРЅС‚ СЃРєСЂС‹РІР°РµС‚СЃСЏ РїСЂРё РєР»РёРєРµ Рё РїСЂРё РїСЂРѕРєСЂСѓС‚РєРµ РІРЅРёР·
 const scrollHint = document.getElementById('scrollHint');
 function hideScrollHint() {
   if (!scrollHint) return;
@@ -235,9 +236,9 @@ scrollHint?.addEventListener('click', () => {
   window.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
 });
 
-// задача дня
+// Р·Р°РґР°С‡Р° РґРЅСЏ
 let dailyTask = null;
-const diffLabels = { easy:'Лёгкая', medium:'Средняя', hard:'Сложная' };
+const diffLabels = { easy:'Р›С‘РіРєР°СЏ', medium:'РЎСЂРµРґРЅСЏСЏ', hard:'РЎР»РѕР¶РЅР°СЏ' };
 
 async function loadDailyTask() {
   try {
@@ -249,29 +250,29 @@ async function loadDailyTask() {
     const dayIdx = Math.floor(Date.now() / 86400000) % tasks.length;
     dailyTask = tasks[dayIdx];
     const diff = dailyTask.difficulty || 'medium';
-    document.getElementById('dailyTaskTitle').textContent = dailyTask.problem_statement.slice(0, 160) + (dailyTask.problem_statement.length > 160 ? '…' : '');
+    document.getElementById('dailyTaskTitle').textContent = dailyTask.problem_statement.slice(0, 160) + (dailyTask.problem_statement.length > 160 ? 'вЂ¦' : '');
     document.getElementById('dailyDiff').textContent = diffLabels[diff] || diff;
     const bonusPoints = Math.round((dailyTask.points || 10) * 1.5);
     const meta = document.getElementById('dailyTaskMeta');
     meta.innerHTML = `<span class="meta-tag">${dailyTask.subject || ''}</span>` +
-      (dailyTask.grade ? `<span class="meta-tag n">${dailyTask.grade} класс</span>` : '') +
-      `<span class="meta-tag n">${bonusPoints} баллов</span>`;
-    const formatHint = dailyTask.answer_input_hint || 'Введите один ответ.';
-    document.getElementById('dailyInputHint').textContent = `Формат ответа: ${formatHint}`;
-    // Make card clickable — navigate to training with task
+      (dailyTask.grade ? `<span class="meta-tag n">${dailyTask.grade} РєР»Р°СЃСЃ</span>` : '') +
+      `<span class="meta-tag n">${bonusPoints} Р±Р°Р»Р»РѕРІ</span>`;
+    const formatHint = dailyTask.answer_input_hint || 'Р’РІРµРґРёС‚Рµ РѕРґРёРЅ РѕС‚РІРµС‚.';
+    document.getElementById('dailyInputHint').textContent = `Р¤РѕСЂРјР°С‚ РѕС‚РІРµС‚Р°: ${formatHint}`;
+    // Make card clickable вЂ” navigate to training with task
     document.getElementById('dailyCard').addEventListener('click', (e) => {
       if (e.target.closest('input, button')) return;
       window.location.href = `training.html?task_id=${dailyTask.id}`;
     });
   } catch {
-    document.getElementById('dailyTaskTitle').textContent = 'Не удалось загрузить задачу';
+    document.getElementById('dailyTaskTitle').textContent = 'РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ Р·Р°РґР°С‡Сѓ';
   }
 }
 
 document.getElementById('dailySubmit').addEventListener('click', async () => {
   if (!dailyTask) return;
   const token = localStorage.getItem('token');
-  if (!token) { alert('Войдите в систему'); return; }
+  if (!token) { alert('Р’РѕР№РґРёС‚Рµ РІ СЃРёСЃС‚РµРјСѓ'); return; }
   const ans = document.getElementById('dailyAnswer').value.trim();
   if (!ans) return;
   const btn = document.getElementById('dailySubmit');
@@ -283,22 +284,22 @@ document.getElementById('dailySubmit').addEventListener('click', async () => {
     const res = await r.json();
     const hint = document.getElementById('dailyHint');
     if (res.answer_input_hint) {
-      document.getElementById('dailyInputHint').textContent = `Формат ответа: ${res.answer_input_hint}`;
+      document.getElementById('dailyInputHint').textContent = `Р¤РѕСЂРјР°С‚ РѕС‚РІРµС‚Р°: ${res.answer_input_hint}`;
     }
     if (res.manual_check) {
-      hint.textContent = 'Ручная проверка — откройте задачу';
+      hint.textContent = 'Р СѓС‡РЅР°СЏ РїСЂРѕРІРµСЂРєР° вЂ” РѕС‚РєСЂРѕР№С‚Рµ Р·Р°РґР°С‡Сѓ';
       hint.style.color = 'var(--accent)';
     } else if (res.is_correct) {
-      hint.textContent = `✓ Верно! +${res.points_earned} баллов`;
+      hint.textContent = `вњ“ Р’РµСЂРЅРѕ! +${res.points_earned} Р±Р°Р»Р»РѕРІ`;
       hint.style.color = '#16a34a';
     } else {
-      hint.textContent = '✗ Неверно, попробуй ещё раз';
+      hint.textContent = 'вњ— РќРµРІРµСЂРЅРѕ, РїРѕРїСЂРѕР±СѓР№ РµС‰С‘ СЂР°Р·';
       hint.style.color = '#dc2626';
     }
   } catch {
-    document.getElementById('dailyHint').textContent = 'Ошибка проверки';
+    document.getElementById('dailyHint').textContent = 'РћС€РёР±РєР° РїСЂРѕРІРµСЂРєРё';
   } finally {
-    btn.disabled = false; btn.textContent = 'Проверить';
+    btn.disabled = false; btn.textContent = 'РџСЂРѕРІРµСЂРёС‚СЊ';
   }
 });
 
@@ -306,7 +307,7 @@ document.getElementById('dailyAnswer').addEventListener('keypress', e => {
   if (e.key === 'Enter') document.getElementById('dailySubmit').click();
 });
 
-// статистика
+// СЃС‚Р°С‚РёСЃС‚РёРєР°
 async function loadStats() {
   try {
     const [sR, tR, solR] = await Promise.allSettled([
@@ -316,12 +317,12 @@ async function loadStats() {
     ]);
     if (sR.status === 'fulfilled' && sR.value.ok) {
       const s = await sR.value.json();
-      document.getElementById('sn1').textContent = s.users ?? '—';
-      document.getElementById('sn3').textContent = s.solutions ?? '—';
+      document.getElementById('sn1').textContent = s.users ?? 'вЂ”';
+      document.getElementById('sn3').textContent = s.solutions ?? 'вЂ”';
     }
     if (tR.status === 'fulfilled' && tR.value.ok) {
       const t = await tR.value.json();
-      document.getElementById('sn0').textContent = (t.tasks || []).length || '—';
+      document.getElementById('sn0').textContent = (t.tasks || []).length || 'вЂ”';
     }
   } catch {}
 }
@@ -331,3 +332,4 @@ loadStats();
 </script>
 </body>
 </html>
+

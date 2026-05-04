@@ -1,9 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EzOlimp — Админ</title>
+<title>EzOlimp вЂ” РђРґРјРёРЅ</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="shared.css">
 <script>var d=document.documentElement;d.setAttribute("data-theme",localStorage.getItem("ez-theme")||"light");d.classList.add("no-transition");window.addEventListener("load",function(){d.classList.remove("no-transition")})</script>
 <style>
@@ -66,31 +67,31 @@
 <div class="admin-wrap">
 
   <div class="page-header" style="padding:0 0 28px">
-    <h1>Панель администратора</h1>
-    <p>Управление платформой и контентом</p>
+    <h1>РџР°РЅРµР»СЊ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР°</h1>
+    <p>РЈРїСЂР°РІР»РµРЅРёРµ РїР»Р°С‚С„РѕСЂРјРѕР№ Рё РєРѕРЅС‚РµРЅС‚РѕРј</p>
   </div>
 
   <div class="admin-stats">
-    <div class="astat fade-up"><div class="num" id="sUsers">—</div><div class="lbl">Пользователей</div></div>
-    <div class="astat fade-up"><div class="num" id="sTasks">—</div><div class="lbl">Задач</div></div>
-    <div class="astat fade-up"><div class="num" id="sSolutions">—</div><div class="lbl">Решений</div></div>
-    <div class="astat fade-up"><div class="num" id="sMatches">—</div><div class="lbl">Матчей</div></div>
+    <div class="astat fade-up"><div class="num" id="sUsers">вЂ”</div><div class="lbl">РџРѕР»СЊР·РѕРІР°С‚РµР»РµР№</div></div>
+    <div class="astat fade-up"><div class="num" id="sTasks">вЂ”</div><div class="lbl">Р—Р°РґР°С‡</div></div>
+    <div class="astat fade-up"><div class="num" id="sSolutions">вЂ”</div><div class="lbl">Р РµС€РµРЅРёР№</div></div>
+    <div class="astat fade-up"><div class="num" id="sMatches">вЂ”</div><div class="lbl">РњР°С‚С‡РµР№</div></div>
   </div>
 
   <div class="admin-tabs">
-    <button class="tab-btn active" data-tab="users">Пользователи</button>
-    <button class="tab-btn" data-tab="tasks">Задачи</button>
-    <button class="tab-btn" data-tab="import">Импорт / Экспорт</button>
+    <button class="tab-btn active" data-tab="users">РџРѕР»СЊР·РѕРІР°С‚РµР»Рё</button>
+    <button class="tab-btn" data-tab="tasks">Р—Р°РґР°С‡Рё</button>
+    <button class="tab-btn" data-tab="import">РРјРїРѕСЂС‚ / Р­РєСЃРїРѕСЂС‚</button>
   </div>
 
   <!-- USERS -->
   <div class="tab-panel active" id="tab-users">
     <div class="admin-card">
-      <h2>Пользователи</h2>
+      <h2>РџРѕР»СЊР·РѕРІР°С‚РµР»Рё</h2>
       <div style="overflow-x:auto">
         <table class="data-table">
-          <thead><tr><th>ID</th><th>Логин</th><th>Email</th><th>Рейтинг</th><th>Роль</th><th></th></tr></thead>
-          <tbody id="usersBody"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Загрузка...</td></tr></tbody>
+          <thead><tr><th>ID</th><th>Р›РѕРіРёРЅ</th><th>Email</th><th>Р РµР№С‚РёРЅРі</th><th>Р РѕР»СЊ</th><th></th></tr></thead>
+          <tbody id="usersBody"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Р—Р°РіСЂСѓР·РєР°...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -100,43 +101,43 @@
   <div class="tab-panel" id="tab-tasks">
     <div class="admin-card" style="margin-bottom:20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
-        <h2 style="margin:0">Задачи</h2>
-        <button class="btn btn-accent btn-sm" id="showAddTask">+ Добавить задачу</button>
+        <h2 style="margin:0">Р—Р°РґР°С‡Рё</h2>
+        <button class="btn btn-accent btn-sm" id="showAddTask">+ Р”РѕР±Р°РІРёС‚СЊ Р·Р°РґР°С‡Сѓ</button>
       </div>
 
       <div id="addTaskForm" style="display:none;background:var(--bg2);border-radius:14px;padding:24px;margin-bottom:20px">
         <div class="form-grid">
-          <div class="form-row"><label>Название</label><input class="input" id="tTitle" type="text" placeholder="ВСОШ 2024 10 класс математика арифметика"></div>
-          <div class="form-row"><label>Предмет</label>
+          <div class="form-row"><label>РќР°Р·РІР°РЅРёРµ</label><input class="input" id="tTitle" type="text" placeholder="Р’РЎРћРЁ 2024 10 РєР»Р°СЃСЃ РјР°С‚РµРјР°С‚РёРєР° Р°СЂРёС„РјРµС‚РёРєР°"></div>
+          <div class="form-row"><label>РџСЂРµРґРјРµС‚</label>
             <select id="tSubject">
-              <option value="математика">Математика</option><option value="информатика">Информатика</option>
-              <option value="физика">Физика</option><option value="химия">Химия</option>
-              <option value="биология">Биология</option><option value="английский">Английский</option>
-              <option value="русский">Русский</option><option value="обществознание">Обществознание</option>
-              <option value="право">Право</option><option value="история">История</option>
-              <option value="география">География</option><option value="экология">Экология</option>
-              <option value="литература">Литература</option><option value="робототехника">Робототехника</option>
+              <option value="РјР°С‚РµРјР°С‚РёРєР°">РњР°С‚РµРјР°С‚РёРєР°</option><option value="РёРЅС„РѕСЂРјР°С‚РёРєР°">РРЅС„РѕСЂРјР°С‚РёРєР°</option>
+              <option value="С„РёР·РёРєР°">Р¤РёР·РёРєР°</option><option value="С…РёРјРёСЏ">РҐРёРјРёСЏ</option>
+              <option value="Р±РёРѕР»РѕРіРёСЏ">Р‘РёРѕР»РѕРіРёСЏ</option><option value="Р°РЅРіР»РёР№СЃРєРёР№">РђРЅРіР»РёР№СЃРєРёР№</option>
+              <option value="СЂСѓСЃСЃРєРёР№">Р СѓСЃСЃРєРёР№</option><option value="РѕР±С‰РµСЃС‚РІРѕР·РЅР°РЅРёРµ">РћР±С‰РµСЃС‚РІРѕР·РЅР°РЅРёРµ</option>
+              <option value="РїСЂР°РІРѕ">РџСЂР°РІРѕ</option><option value="РёСЃС‚РѕСЂРёСЏ">РСЃС‚РѕСЂРёСЏ</option>
+              <option value="РіРµРѕРіСЂР°С„РёСЏ">Р“РµРѕРіСЂР°С„РёСЏ</option><option value="СЌРєРѕР»РѕРіРёСЏ">Р­РєРѕР»РѕРіРёСЏ</option>
+              <option value="Р»РёС‚РµСЂР°С‚СѓСЂР°">Р›РёС‚РµСЂР°С‚СѓСЂР°</option><option value="СЂРѕР±РѕС‚РѕС‚РµС…РЅРёРєР°">Р РѕР±РѕС‚РѕС‚РµС…РЅРёРєР°</option>
             </select>
           </div>
         </div>
         <div class="form-grid">
-          <div class="form-row"><label>Сложность</label>
-            <select id="tDiff"><option value="easy">Лёгкая</option><option value="medium">Средняя</option><option value="hard">Сложная</option></select>
+          <div class="form-row"><label>РЎР»РѕР¶РЅРѕСЃС‚СЊ</label>
+            <select id="tDiff"><option value="easy">Р›С‘РіРєР°СЏ</option><option value="medium">РЎСЂРµРґРЅСЏСЏ</option><option value="hard">РЎР»РѕР¶РЅР°СЏ</option></select>
           </div>
-          <div class="form-row"><label>Очки</label><input class="input" id="tPoints" type="number" value="10" min="1"></div>
+          <div class="form-row"><label>РћС‡РєРё</label><input class="input" id="tPoints" type="number" value="10" min="1"></div>
         </div>
-        <div class="form-row"><label>Условие задачи</label><textarea class="input" id="tStatement" rows="4"></textarea></div>
-        <div class="form-row"><label>Правильный ответ</label><input class="input" id="tAnswer" type="text"></div>
+        <div class="form-row"><label>РЈСЃР»РѕРІРёРµ Р·Р°РґР°С‡Рё</label><textarea class="input" id="tStatement" rows="4"></textarea></div>
+        <div class="form-row"><label>РџСЂР°РІРёР»СЊРЅС‹Р№ РѕС‚РІРµС‚</label><input class="input" id="tAnswer" type="text"></div>
         <div style="display:flex;gap:10px;margin-top:4px">
-          <button class="btn btn-accent" id="submitTask">Создать</button>
-          <button class="btn btn-outline" id="cancelTask">Отмена</button>
+          <button class="btn btn-accent" id="submitTask">РЎРѕР·РґР°С‚СЊ</button>
+          <button class="btn btn-outline" id="cancelTask">РћС‚РјРµРЅР°</button>
         </div>
       </div>
 
       <div style="overflow-x:auto">
         <table class="data-table">
-          <thead><tr><th>ID</th><th>Название</th><th>Предмет</th><th>Сложность</th><th>Очки</th><th></th></tr></thead>
-          <tbody id="tasksBody"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Загрузка...</td></tr></tbody>
+          <thead><tr><th>ID</th><th>РќР°Р·РІР°РЅРёРµ</th><th>РџСЂРµРґРјРµС‚</th><th>РЎР»РѕР¶РЅРѕСЃС‚СЊ</th><th>РћС‡РєРё</th><th></th></tr></thead>
+          <tbody id="tasksBody"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Р—Р°РіСЂСѓР·РєР°...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -145,23 +146,23 @@
   <!-- IMPORT/EXPORT -->
   <div class="tab-panel" id="tab-import">
     <div class="admin-card">
-      <h2>Импорт и экспорт</h2>
+      <h2>РРјРїРѕСЂС‚ Рё СЌРєСЃРїРѕСЂС‚</h2>
       <div style="margin-bottom:20px">
-        <button class="btn btn-danger btn-sm" id="deleteAllBtn">Удалить все задачи</button>
+        <button class="btn btn-danger btn-sm" id="deleteAllBtn">РЈРґР°Р»РёС‚СЊ РІСЃРµ Р·Р°РґР°С‡Рё</button>
       </div>
       <div class="import-grid">
         <div class="import-box">
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          <h3>Импорт задач</h3>
-          <p>Загрузите JSON файл с задачами</p>
+          <h3>РРјРїРѕСЂС‚ Р·Р°РґР°С‡</h3>
+          <p>Р—Р°РіСЂСѓР·РёС‚Рµ JSON С„Р°Р№Р» СЃ Р·Р°РґР°С‡Р°РјРё</p>
           <input type="file" id="importFile" accept=".json" style="display:none">
-          <button class="btn btn-accent btn-sm" onclick="document.getElementById('importFile').click()">Выбрать файл</button>
+          <button class="btn btn-accent btn-sm" onclick="document.getElementById('importFile').click()">Р’С‹Р±СЂР°С‚СЊ С„Р°Р№Р»</button>
         </div>
         <div class="import-box">
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <h3>Экспорт задач</h3>
-          <p>Скачайте все задачи в формате JSON</p>
-          <button class="btn btn-accent btn-sm" id="exportBtn">Скачать JSON</button>
+          <h3>Р­РєСЃРїРѕСЂС‚ Р·Р°РґР°С‡</h3>
+          <p>РЎРєР°С‡Р°Р№С‚Рµ РІСЃРµ Р·Р°РґР°С‡Рё РІ С„РѕСЂРјР°С‚Рµ JSON</p>
+          <button class="btn btn-accent btn-sm" id="exportBtn">РЎРєР°С‡Р°С‚СЊ JSON</button>
         </div>
       </div>
     </div>
@@ -179,7 +180,7 @@ renderFooter();
 
 const token = localStorage.getItem('token');
 const user = JSON.parse(localStorage.getItem('user') || '{}');
-if (!token || !user.is_admin) { alert('Доступ запрещён'); location.href = 'main.html'; }
+if (!token || !user.is_admin) { alert('Р”РѕСЃС‚СѓРї Р·Р°РїСЂРµС‰С‘РЅ'); location.href = 'main.html'; }
 
 // tabs
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -194,46 +195,46 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 function escHtml(v) { return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-const diffLabels = { easy:'Лёгкая', medium:'Средняя', hard:'Сложная' };
+const diffLabels = { easy:'Р›С‘РіРєР°СЏ', medium:'РЎСЂРµРґРЅСЏСЏ', hard:'РЎР»РѕР¶РЅР°СЏ' };
 
 async function loadStats() {
   try {
     const r = await fetch(`${API_URL}/stats`);
     if (!r.ok) return;
     const s = await r.json();
-    document.getElementById('sUsers').textContent = s.users ?? '—';
-    document.getElementById('sTasks').textContent = s.tasks ?? '—';
-    document.getElementById('sSolutions').textContent = s.solutions ?? '—';
-    document.getElementById('sMatches').textContent = s.matches ?? '—';
+    document.getElementById('sUsers').textContent = s.users ?? 'вЂ”';
+    document.getElementById('sTasks').textContent = s.tasks ?? 'вЂ”';
+    document.getElementById('sSolutions').textContent = s.solutions ?? 'вЂ”';
+    document.getElementById('sMatches').textContent = s.matches ?? 'вЂ”';
   } catch {}
 }
 
 async function loadUsers() {
-  document.getElementById('usersBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Загрузка...</td></tr>';
+  document.getElementById('usersBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Р—Р°РіСЂСѓР·РєР°...</td></tr>';
   try {
     const r = await fetch(`${API_URL}/admin/users`, { headers: { Authorization: token } });
     const d = await r.json();
     const users = d.users || [];
-    if (!users.length) { document.getElementById('usersBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Нет пользователей</td></tr>'; return; }
+    if (!users.length) { document.getElementById('usersBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">РќРµС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№</td></tr>'; return; }
     document.getElementById('usersBody').innerHTML = users.map(u => `
       <tr>
         <td>${u.id}</td>
         <td style="font-weight:600;color:var(--text)">${escHtml(u.username)}</td>
         <td>${escHtml(u.email)}</td>
         <td>${u.rating ?? 1000}</td>
-        <td>${u.is_admin ? '<span style="background:var(--accent-l);color:var(--accent);padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600">Админ</span>' : '<span style="background:var(--bg2);color:var(--text3);padding:2px 8px;border-radius:4px;font-size:12px">Пользователь</span>'}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})">Удалить</button></td>
+        <td>${u.is_admin ? '<span style="background:var(--accent-l);color:var(--accent);padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600">РђРґРјРёРЅ</span>' : '<span style="background:var(--bg2);color:var(--text3);padding:2px 8px;border-radius:4px;font-size:12px">РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ</span>'}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})">РЈРґР°Р»РёС‚СЊ</button></td>
       </tr>`).join('');
-  } catch { document.getElementById('usersBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--accent)">Ошибка загрузки</td></tr>'; }
+  } catch { document.getElementById('usersBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--accent)">РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё</td></tr>'; }
 }
 
 async function loadTasks() {
-  document.getElementById('tasksBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Загрузка...</td></tr>';
+  document.getElementById('tasksBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Р—Р°РіСЂСѓР·РєР°...</td></tr>';
   try {
     const r = await fetch(`${API_URL}/tasks`);
     const d = await r.json();
     const tasks = d.tasks || [];
-    if (!tasks.length) { document.getElementById('tasksBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Нет задач</td></tr>'; return; }
+    if (!tasks.length) { document.getElementById('tasksBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">РќРµС‚ Р·Р°РґР°С‡</td></tr>'; return; }
     document.getElementById('tasksBody').innerHTML = tasks.map(t => `
       <tr>
         <td>${t.id}</td>
@@ -241,9 +242,9 @@ async function loadTasks() {
         <td>${escHtml(t.subject)}</td>
         <td>${diffLabels[t.difficulty] || t.difficulty}</td>
         <td>${t.points}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="deleteTask(${t.id})">Удалить</button></td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteTask(${t.id})">РЈРґР°Р»РёС‚СЊ</button></td>
       </tr>`).join('');
-  } catch { document.getElementById('tasksBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--accent)">Ошибка загрузки</td></tr>'; }
+  } catch { document.getElementById('tasksBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--accent)">РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё</td></tr>'; }
 }
 
 // add task
@@ -255,7 +256,7 @@ document.getElementById('cancelTask').addEventListener('click', () => {
 });
 document.getElementById('submitTask').addEventListener('click', async () => {
   const btn = document.getElementById('submitTask');
-  btn.disabled = true; btn.textContent = 'Создание...';
+  btn.disabled = true; btn.textContent = 'РЎРѕР·РґР°РЅРёРµ...';
   try {
     const r = await fetch(`${API_URL}/tasks`, {
       method: 'POST', headers: { Authorization: token, 'Content-Type': 'application/json' },
@@ -268,38 +269,38 @@ document.getElementById('submitTask').addEventListener('click', async () => {
         points: parseInt(document.getElementById('tPoints').value) || 10
       })
     });
-    if (!r.ok) { const e = await r.json(); alert(e.error || 'Ошибка'); }
+    if (!r.ok) { const e = await r.json(); alert(e.error || 'РћС€РёР±РєР°'); }
     else { document.getElementById('addTaskForm').style.display = 'none'; loadTasks(); loadStats(); }
-  } catch { alert('Ошибка сервера'); }
-  finally { btn.disabled = false; btn.textContent = 'Создать'; }
+  } catch { alert('РћС€РёР±РєР° СЃРµСЂРІРµСЂР°'); }
+  finally { btn.disabled = false; btn.textContent = 'РЎРѕР·РґР°С‚СЊ'; }
 });
 
 async function deleteTask(id) {
-  if (!confirm('Удалить задачу?')) return;
+  if (!confirm('РЈРґР°Р»РёС‚СЊ Р·Р°РґР°С‡Сѓ?')) return;
   try {
     const r = await fetch(`${API_URL}/tasks/${id}`, { method: 'DELETE', headers: { Authorization: token } });
     if (r.ok) { loadTasks(); loadStats(); }
-    else alert('Ошибка удаления');
-  } catch { alert('Ошибка сервера'); }
+    else alert('РћС€РёР±РєР° СѓРґР°Р»РµРЅРёСЏ');
+  } catch { alert('РћС€РёР±РєР° СЃРµСЂРІРµСЂР°'); }
 }
 
 async function deleteUser(id) {
-  if (!confirm('Удалить пользователя?')) return;
+  if (!confirm('РЈРґР°Р»РёС‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ?')) return;
   try {
     const r = await fetch(`${API_URL}/users/${id}`, { method: 'DELETE', headers: { Authorization: token } });
     if (r.ok) { loadUsers(); loadStats(); }
-    else alert('Ошибка удаления');
-  } catch { alert('Ошибка сервера'); }
+    else alert('РћС€РёР±РєР° СѓРґР°Р»РµРЅРёСЏ');
+  } catch { alert('РћС€РёР±РєР° СЃРµСЂРІРµСЂР°'); }
 }
 
 document.getElementById('deleteAllBtn').addEventListener('click', async () => {
-  if (!confirm('Удалить ВСЕ задачи? Это нельзя отменить!')) return;
+  if (!confirm('РЈРґР°Р»РёС‚СЊ Р’РЎР• Р·Р°РґР°С‡Рё? Р­С‚Рѕ РЅРµР»СЊР·СЏ РѕС‚РјРµРЅРёС‚СЊ!')) return;
   try {
     const r = await fetch(`${API_URL}/admin/tasks/delete_all`, { method: 'DELETE', headers: { Authorization: token } });
     const d = await r.json();
-    alert(d.message || 'Готово');
+    alert(d.message || 'Р“РѕС‚РѕРІРѕ');
     loadStats();
-  } catch { alert('Ошибка'); }
+  } catch { alert('РћС€РёР±РєР°'); }
 });
 
 document.getElementById('exportBtn').addEventListener('click', async () => {
@@ -311,7 +312,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     a.href = URL.createObjectURL(blob);
     a.download = `tasks_${new Date().toISOString().split('T')[0]}.json`;
     a.click();
-  } catch { alert('Ошибка экспорта'); }
+  } catch { alert('РћС€РёР±РєР° СЌРєСЃРїРѕСЂС‚Р°'); }
 });
 
 document.getElementById('importFile').addEventListener('change', async e => {
@@ -325,9 +326,9 @@ document.getElementById('importFile').addEventListener('change', async e => {
       body: JSON.stringify({ tasks })
     });
     const d = await r.json();
-    alert(d.message || 'Импорт завершён');
+    alert(d.message || 'РРјРїРѕСЂС‚ Р·Р°РІРµСЂС€С‘РЅ');
     loadStats();
-  } catch { alert('Ошибка импорта'); }
+  } catch { alert('РћС€РёР±РєР° РёРјРїРѕСЂС‚Р°'); }
   e.target.value = '';
 });
 
@@ -336,3 +337,4 @@ loadUsers();
 </script>
 </body>
 </html>
+

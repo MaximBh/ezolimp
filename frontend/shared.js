@@ -94,7 +94,10 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadNavAvatar(tkn) {
     try {
       const r = await fetch(`${API_URL}/auth/me`, { headers: { Authorization: tkn } });
-      if (!r.ok) { clearAuth(); return; }
+      if (!r.ok) {
+        if (r.status === 401) clearAuth();
+        return;
+      }
       const u = await r.json();
       const img = document.getElementById('navAvatarImg');
       if (img) img.src = u.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(u.username)}&backgroundColor=7048b8&textColor=ffffff`;
