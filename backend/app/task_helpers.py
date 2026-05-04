@@ -1,11 +1,11 @@
 import hashlib
 import re
-from collections import Counter
 from datetime import datetime, timedelta
 
 from app.config import (
-    _safe_int, _normalize_subject, _normalize_olympiad_name, _is_manual_answer,
-    SUBJECT_THEMES, NEW_SUBJECTS, MONTHS_RU_GENITIVE,
+    _safe_int, _normalize_subject, _normalize_difficulty, _normalize_olympiad_name,
+    _is_manual_answer, _time_limit_by_difficulty,
+    SUBJECT_THEMES, MONTHS_RU_GENITIVE,
     YEAR_RE, TASK_NUMBER_RE, VARIANT_NUMBER_RE,
 )
 from app.utils.text import (
@@ -13,7 +13,6 @@ from app.utils.text import (
     strip_source_lines as _strip_source_lines,
     clean_solution_explanation_text as _clean_solution_explanation_text,
 )
-from app.utils.attachments import attachments_from_storage as _attachments_from_storage
 from app.utils.answer import clean_reference_answer_text, answer_input_hint_for_reference, ANSWER_HINT_MANUAL
 
 
@@ -133,30 +132,16 @@ def task_olympiad(task) -> str:
 
 
 def task_list_payload(task, view_count=None):
-    from app.utils.attachments import source_fragments_from_storage
-    from app.config import _normalize_difficulty, _time_limit_by_difficulty
+    """Lightweight payload for task lists — omits heavy fields like solution_explanation, attachments."""
     payload = {
         "id": task.id,
         "title": build_task_title(task.title, _normalize_subject(task.subject), task.grade, task.topic),
-        "problem_statement": _strip_source_lines(task.problem_statement or ""),
-        "input_format": task.input_format,
-        "output_format": task.output_format,
-        "examples": task.examples,
-        "solution_explanation": _clean_solution_explanation_text(task.solution_explanation),
         "difficulty": _normalize_difficulty(task.difficulty),
         "subject": _normalize_subject(task.subject),
         "olympiad": task_olympiad(task),
         "grade": task.grade,
         "topic": task.topic,
         "tags": task.tags,
-        "attachments": _attachments_from_storage(task.attachments),
-        "source_pdf_url": task.source_pdf_url,
-        "source_page_start": task.source_page_start,
-        "source_page_end": task.source_page_end,
-        "source_fragments": source_fragments_from_storage(task.source_fragments),
-        "ai_solution_status": task.ai_solution_status,
-        "ai_solution_error": task.ai_solution_error,
-        "answer_input_hint": answer_input_hint_for_task(task),
         "points": task.points,
         "time_limit": _time_limit_by_difficulty(task.difficulty),
     }
@@ -270,78 +255,7 @@ def resolve_vsosh_reference_answer(task) -> str:
     return ""
 
 
-def build_generated_subject_task(subject: str, grade: int, local_task_number: int, year: int) -> dict:
-    base_value = grade * 10 + local_task_number
-    topic = SUBJECT_THEMES.get(subject, ["общая тема"])[(local_task_number - 1) % len(SUBJECT_THEMES.get(subject, ["общая тема"]))]
-    if subject == "английский":
-        kw, nw = 45 + base_value, 8 + (local_task_number % 6)
-        statement = f"Прочитайте условие полностью.\nНа уроке английского ученики разобрали текст по теме «{topic}». В тексте уже знакомы {kw} слов, а также добавили {nw} новых слов.\nСколько слов нужно повторить всего после урока?"
-        answer = str(kw + nw)
-    elif subject == "русский":
-        wt, pm = 18 + local_task_number, 3 + (grade % 4)
-        statement = f"Прочитайте условие полностью.\nНа разборе темы «{topic}» ученики анализировали предложение из {wt} слов и нашли {pm} пунктуационных конструкций.\nСколько объектов разбора получилось всего (слова + конструкции)?"
-        answer = str(wt + pm)
-    elif subject == "обществознание":
-        fb, tr = 70 + base_value, 10 + (local_task_number % 8)
-        statement = f"Прочитайте условие полностью.\nВ задаче по теме «{topic}» рассматривается семейный бюджет: {fb} единиц на обязательные расходы и {tr} единиц на транспорт.\nКаков общий объём обязательных расходов?"
-        answer = str(fb + tr)
-    elif subject == "право":
-        rc, dc = 12 + local_task_number, 7 + (grade % 5)
-        statement = f"Прочитайте условие полностью.\nНа занятии по теме «{topic}» разобрали {rc} примеров прав и {dc} примеров обязанностей.\nСколько всего правовых ситуаций рассмотрели?"
-        answer = str(rc + dc)
-    elif subject == "история":
-        ea = 900 + base_value
-        eb = ea + 15 + (local_task_number % 9)
-        statement = f"Прочитайте условие полностью.\nПо теме «{topic}» заданы даты двух событий: {ea} год и {eb} год.\nНа сколько лет второе событие позже первого?"
-        answer = str(eb - ea)
-    elif subject == "география":
-        ca, cb, cc = 12 + (grade % 6) + local_task_number, 8 + (local_task_number % 7), 10 + (grade % 5)
-        statement = f"Прочитайте условие полностью.\nПо теме «{topic}» известны средние температуры трёх городов: {ca}°C, {cb}°C и {cc}°C.\nНайдите среднюю температуру трёх городов."
-        answer = f"{(ca + cb + cc) / 3:.1f}"
-    elif subject == "экология":
-        eb2 = 140 + base_value
-        ea2 = eb2 - (10 + (local_task_number % 6))
-        statement = f"Прочитайте условие полностью.\nВ задаче по теме «{topic}» выбросы до проекта составили {eb2} единиц, а после проекта — {ea2} единиц.\nНа сколько единиц удалось снизить выбросы?"
-        answer = str(eb2 - ea2)
-    elif subject == "литература":
-        ci, ap = 20 + local_task_number, 5 + (grade % 6)
-        statement = f"Прочитайте условие полностью.\nНа семинаре по теме «{topic}» ученики подготовили {ci} цитат и {ap} тезисов анализа.\nСколько элементов литературного разбора получилось всего?"
-        answer = str(ci + ap)
-    else:
-        ra, rb = 35 + base_value, 18 + (local_task_number % 10)
-        statement = f"Прочитайте условие полностью.\nВ проекте по теме «{topic}» робот прошёл {ra} метров в первом тесте и {rb} метров во втором.\nКакой общий путь прошёл робот?"
-        answer = str(ra + rb)
-    return {
-        "title": f"VSOSH {year} {subject} grade {grade} task {local_task_number}",
-        "problem_statement": statement, "answer": answer, "subject": subject, "grade": grade,
-        "difficulty": "easy" if local_task_number <= 7 else ("medium" if local_task_number <= 14 else "hard"),
-        "points": 8 if local_task_number <= 7 else (10 if local_task_number <= 14 else 12),
-        "solution_explanation": f"Решение (сгенерировано ChatGPT):\n1. Выпишите все числа из условия и определите требуемую операцию.\n2. Выполните вычисление и проверьте единицы измерения.\nОтвет: {answer}.",
-        "topic": topic, "tags": "vsosh,generated-task",
-        "attachments": [{"type": "table", "title": "Данные к задаче", "headers": ["Поле", "Значение"],
-            "rows": [["Предмет", subject], ["Класс", str(grade)], ["Тема", topic], ["Год варианта", str(year)], ["Номер задачи", str(local_task_number)]]}],
-    }
 
-
-def augment_tasks_with_new_subjects(raw_tasks: list) -> list:
-    prepared = [dict(item) for item in raw_tasks if isinstance(item, dict)]
-    if not prepared:
-        return prepared
-    subject_counter = Counter(_normalize_subject(item.get("subject")) for item in prepared)
-    target = max(subject_counter.values()) if subject_counter else 0
-    if target <= 0:
-        return prepared
-    for subject in NEW_SUBJECTS:
-        existing = subject_counter.get(subject, 0)
-        if existing >= target:
-            continue
-        for index in range(existing, target):
-            grade = 5 + ((index // 20) % 7)
-            local_task_number = (index % 20) + 1
-            year = 2025 if local_task_number <= 10 else 2024
-            prepared.append(build_generated_subject_task(subject, grade, local_task_number, year))
-        subject_counter[subject] = target
-    return prepared
 
 
 def is_task_ai_answer_pending(task) -> bool:

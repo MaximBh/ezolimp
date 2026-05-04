@@ -5,7 +5,7 @@ from urllib.request import Request, urlopen
 
 from app.config import (
     _safe_int, _normalize_subject, _normalize_difficulty, _time_limit_by_difficulty,
-    _is_manual_answer, _extract_source_url, _synthetic_subjects_enabled,
+    _is_manual_answer, _extract_source_url,
     _import_ai_solutions_enabled, _sync_tasks_on_startup_enabled,
     PROJECT_ROOT, POINTS_MARKER_RE,
 )
@@ -39,8 +39,6 @@ from app.task_helpers import (
     infer_answer_from_statement as _infer_answer_from_statement,
     extract_answer_from_official_solution as _extract_answer_from_official_solution,
     extract_variant_number as _extract_variant_number,
-    augment_tasks_with_new_subjects as _augment_tasks_with_new_subjects,
-    build_task_title as _build_task_title,
 )
 
 
@@ -310,8 +308,7 @@ def import_tasks_from_json():
         raw_tasks = payload.get("tasks", []) if isinstance(payload, dict) else []
         if not isinstance(raw_tasks, list) or not raw_tasks:
             return 0
-        if _synthetic_subjects_enabled():
-            raw_tasks = _augment_tasks_with_new_subjects(raw_tasks)
+        # Синтетическая генерация задач отключена
         import_ai_solutions = _import_ai_solutions_enabled()
 
         existing_tasks = db.query(Task).all()

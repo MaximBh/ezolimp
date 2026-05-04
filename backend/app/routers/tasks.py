@@ -1,9 +1,9 @@
 import re
-import traceback
 from datetime import datetime, date
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
+import app.cache as app_cache
 
 from app.database import get_db, User, Task, TaskView, Solution, UserStats
 from app.schemas import TaskCreate
@@ -68,34 +68,51 @@ router = APIRouter()
 
 @router.get("/tasks")
 def get_tasks(db: Session = Depends(get_db)):
+    cached = app_cache.get("tasks:list")
+    if cached is not None:
+        return cached
     try:
-        return {"tasks": [_task_list_payload(t) for t in db.query(Task).all()]}
+        result = {"tasks": [_task_list_payload(t) for t in db.query(Task).all()]}
+        app_cache.put("tasks:list", result, ttl_sec=60)
+        return result
     except Exception:
         raise HTTPException(status_code=500, detail="Ошибка при получении задач")
 
 
 @router.get("/tasks/filters")
 def get_task_filters(db: Session = Depends(get_db)):
+    cached = app_cache.get("tasks:filters")
+    if cached is not None:
+        return cached
     try:
-        tasks = db.query(Task).all()
+        tasks = db.query(Task.subject, Task.title, Task.grade).all()
         subject_order = {s: i for i, s in enumerate(SUPPORTED_SUBJECTS)}
         tree = {}
-        for task in tasks:
-            subject = _normalize_subject(task.subject)
-            olympiad = _task_olympiad(task)
-            if not subject or not olympiad or task.grade is None:
+        for t in tasks:
+            subject = _normalize_subject(t.subject)
+            olympiad = _normalize_olympiad_name(_task_olympiad_from_title(t.title))
+            if not subject or not olympiad or t.grade is None:
                 continue
-            tree.setdefault(subject, {}).setdefault(olympiad, set()).add(str(task.grade))
+            tree.setdefault(subject, {}).setdefault(olympiad, set()).add(str(t.grade))
         subjects = sorted({_normalize_subject(t.subject) for t in tasks if _normalize_subject(t.subject)}, key=lambda v: (subject_order.get(v, 999), v))
-        olympiads = sorted({_task_olympiad(t) for t in tasks if _task_olympiad(t)})
+        olympiads = sorted({_normalize_olympiad_name(_task_olympiad_from_title(t.title)) for t in tasks if t.title})
         grades = sorted({t.grade for t in tasks if t.grade is not None and 1 <= int(t.grade) <= 11})
         normalized_tree = {
             s: {o: sorted(gs, key=lambda v: int(v) if str(v).isdigit() else 999) for o, gs in sorted(om.items())}
             for s, om in sorted(tree.items(), key=lambda x: (subject_order.get(x[0], 999), x[0]))
         }
-        return {"subjects": subjects, "olympiads": olympiads, "grades": grades, "tree": normalized_tree}
+        result = {"subjects": subjects, "olympiads": olympiads, "grades": grades, "tree": normalized_tree}
+        app_cache.put("tasks:filters", result, ttl_sec=300)
+        return result
     except Exception:
         raise HTTPException(status_code=500, detail="Ошибка при получении фильтров")
+
+
+def _task_olympiad_from_title(title: str) -> str:
+    """Extract olympiad name from title without needing full Task object."""
+    from app.task_helpers import parse_title_parts
+    olympiad, _, _ = parse_title_parts(title)
+    return _normalize_olympiad_name(olympiad)
 
 
 @router.get("/tasks/popular/today")
@@ -224,6 +241,7 @@ def delete_task(task_id: int, current_user: User = Depends(get_admin_user), db: 
             raise HTTPException(status_code=404, detail="Задача не найдена")
         db.delete(task)
         db.commit()
+        app_cache.invalidate_prefix("tasks:")
         return {"message": "Задача удалена"}
     except HTTPException:
         raise
@@ -277,6 +295,7 @@ def create_task(task_data: TaskCreate, current_user: User = Depends(get_current_
         )
         db.add(task)
         db.commit()
+        app_cache.invalidate_prefix("tasks:")
         return {"message": "Задача создана", "id": task.id}
     except Exception as e:
         db.rollback()
@@ -468,7 +487,6 @@ def get_task_solution(task_id: int, mark_viewed: bool = True, enrich: bool = Tru
     except HTTPException:
         raise
     except Exception as e:
-        traceback.print_exc()
         raise HTTPException(status_code=500, detail="Ошибка получения решения")
 
 
@@ -491,9 +509,7 @@ def solve_task(task_id: int, user_answer: str, current_user: User = Depends(get_
             Solution.is_correct == True
         ).first() is not None
 
-        import sys
-        sys.stderr.write(f"[DEBUG] User {current_user.id} ({current_user.username}) solving task {task_id}. viewed_solution={viewed_solution}, prev_correct={previous_correct}\n")
-        sys.stderr.flush()
+
 
         vsosh_ref = _resolve_vsosh_reference_answer(task)
         if not vsosh_ref:
@@ -575,6 +591,5 @@ def solve_task(task_id: int, user_answer: str, current_user: User = Depends(get_
     except HTTPException:
         raise
     except Exception as e:
-        traceback.print_exc()
         db.rollback()
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")

@@ -1,10 +1,12 @@
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from app.database import get_db, User, Task, Solution, UserStats, Match
 from app.auth_middleware import get_current_user
 from app.config import _normalize_subject, _normalize_difficulty
 from app.task_helpers import build_task_title
+from app import cache as app_cache
 
 router = APIRouter()
 
@@ -41,19 +43,23 @@ def get_user_stats(user_id: int, db: Session = Depends(get_db)):
 def get_user_analytics(user_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     _check_access(user_id, current_user)
     try:
-        correct_solutions = db.query(Solution).filter(Solution.user_id == user_id, Solution.is_correct == True).all()
-        unique_tasks = {}
-        for sol in correct_solutions:
-            if sol.task_id not in unique_tasks:
-                unique_tasks[sol.task_id] = sol
+        # Single JOIN query instead of N+1
+        rows = (
+            db.query(Solution, Task)
+            .join(Task, Task.id == Solution.task_id)
+            .filter(Solution.user_id == user_id, Solution.is_correct == True)
+            .all()
+        )
+        # Deduplicate by task_id (keep first correct solution per task)
+        unique_tasks: dict[int, tuple] = {}
+        for sol, task in rows:
+            if task.id not in unique_tasks:
+                unique_tasks[task.id] = (sol, task)
         if not unique_tasks:
             return {"by_subject": {}, "by_difficulty": {}, "by_date": [], "accuracy": 0}
 
         by_subject, by_difficulty, by_date = {}, {}, {}
-        for task_id, solution in unique_tasks.items():
-            task = db.query(Task).filter(Task.id == task_id).first()
-            if not task:
-                continue
+        for task_id, (solution, task) in unique_tasks.items():
             sk = _normalize_subject(task.subject)
             dk = _normalize_difficulty(task.difficulty)
             by_subject.setdefault(sk, {"total": 0, "correct": 0})
@@ -71,7 +77,7 @@ def get_user_analytics(user_id: int, current_user: User = Depends(get_current_us
         return {"by_subject": by_subject, "by_difficulty": by_difficulty, "by_date": sorted(by_date.items()),
                 "accuracy": round((correct / total * 100) if total > 0 else 0, 1),
                 "total_solutions": total, "correct_solutions": correct}
-    except Exception as e:
+    except Exception:
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
@@ -79,12 +85,18 @@ def get_user_analytics(user_id: int, current_user: User = Depends(get_current_us
 def get_user_achievements(user_id: int, db: Session = Depends(get_db)):
     try:
         stats = db.query(UserStats).filter(UserStats.user_id == user_id).first()
-        matches = db.query(Match).filter((Match.player1_id == user_id) | (Match.player2_id == user_id), Match.status == "finished").all()
+        # Use COUNT queries instead of loading all matches into memory
+        pvp_total = db.query(func.count(Match.id)).filter(
+            ((Match.player1_id == user_id) | (Match.player2_id == user_id)),
+            Match.status == "finished"
+        ).scalar() or 0
+        pvp_wins = db.query(func.count(Match.id)).filter(
+            Match.winner_id == user_id, Match.status == "finished"
+        ).scalar() or 0
+
         ca = stats.correct_answers if stats else 0
         bs = stats.best_streak if stats else 0
         tp = stats.total_points if stats else 0
-        pvp_wins = sum(1 for m in matches if m.winner_id == user_id)
-        pvp_total = len(matches)
         ALL_ACHIEVEMENTS = [
             {"id": "first_solve", "title": "Первое решение", "description": "Реши первую задачу", "color": "yellow", "emoji": "⭐", "check": ca >= 1},
             {"id": "solver_5", "title": "Начинающий", "description": "5 правильных ответов", "color": "blue", "emoji": "📚", "check": ca >= 5},
@@ -109,7 +121,7 @@ def get_user_achievements(user_id: int, db: Session = Depends(get_db)):
         unlocked = [a for a in result if a["unlocked"]]
         locked = [a for a in result if not a["unlocked"]]
         return {"achievements": unlocked + locked, "total_unlocked": len(unlocked), "total_available": len(ALL_ACHIEVEMENTS)}
-    except Exception as e:
+    except Exception:
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
@@ -131,48 +143,70 @@ def get_user_profile(user_id: int, db: Session = Depends(get_db)):
 @router.get("/users/{user_id}/solutions")
 def get_user_solutions(user_id: int, db: Session = Depends(get_db)):
     try:
-        solutions = db.query(Solution).filter(Solution.user_id == user_id, Solution.is_correct == True).order_by(Solution.created_at.desc()).limit(10).all()
+        # Single JOIN instead of N+1 queries
+        rows = (
+            db.query(Solution, Task)
+            .join(Task, Task.id == Solution.task_id)
+            .filter(Solution.user_id == user_id, Solution.is_correct == True)
+            .order_by(Solution.created_at.desc())
+            .limit(10)
+            .all()
+        )
         result = []
-        for sol in solutions:
-            task = db.query(Task).filter(Task.id == sol.task_id).first()
-            if task:
-                result.append({
-                    "task_id": task.id,
-                    "task_title": build_task_title(task.title, _normalize_subject(task.subject), task.grade, task.topic),
-                    "subject": _normalize_subject(task.subject),
-                    "difficulty": _normalize_difficulty(task.difficulty),
-                    "points": sol.points_earned,
-                    "solved_at": sol.created_at.isoformat() if sol.created_at else None
-                })
+        for sol, task in rows:
+            result.append({
+                "task_id": task.id,
+                "task_title": build_task_title(task.title, _normalize_subject(task.subject), task.grade, task.topic),
+                "subject": _normalize_subject(task.subject),
+                "difficulty": _normalize_difficulty(task.difficulty),
+                "points": sol.points_earned,
+                "solved_at": sol.created_at.isoformat() if sol.created_at else None
+            })
         return {"solutions": result}
-    except Exception as e:
+    except Exception:
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
 @router.get("/leaderboard")
 def get_leaderboard(limit: int = 50, sort: str = "elo", db: Session = Depends(get_db)):
+    cache_key = f"leaderboard:{sort}:{limit}"
+    cached = app_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     try:
         if sort == "points":
-            # Топ по баллам — берём из UserStats, сортируем по total_points
-            all_stats = db.query(UserStats).order_by(UserStats.total_points.desc()).limit(limit).all()
+            # Single JOIN instead of N+1
+            rows = (
+                db.query(User, UserStats)
+                .join(UserStats, UserStats.user_id == User.id)
+                .order_by(UserStats.total_points.desc())
+                .limit(limit)
+                .all()
+            )
             result = []
-            for idx, stats in enumerate(all_stats, 1):
-                user = db.query(User).filter(User.id == stats.user_id).first()
-                if not user:
-                    continue
+            for idx, (user, stats) in enumerate(rows, 1):
                 result.append({"rank": idx, "id": user.id, "username": user.username, "full_name": user.full_name,
                                "school": user.school or "-", "rating": user.rating, "avatar_url": user.avatar_url,
                                "total_solved": stats.total_solved or 0, "total_points": stats.total_points or 0})
         else:
-            # Топ по Elo рейтингу
-            users = db.query(User).order_by(User.rating.desc()).limit(limit).all()
+            # Single LEFT JOIN instead of N+1
+            rows = (
+                db.query(User, UserStats)
+                .outerjoin(UserStats, UserStats.user_id == User.id)
+                .order_by(User.rating.desc())
+                .limit(limit)
+                .all()
+            )
             result = []
-            for idx, user in enumerate(users, 1):
-                stats = db.query(UserStats).filter(UserStats.user_id == user.id).first()
+            for idx, (user, stats) in enumerate(rows, 1):
                 result.append({"rank": idx, "id": user.id, "username": user.username, "full_name": user.full_name,
                                "school": user.school or "-", "rating": user.rating, "avatar_url": user.avatar_url,
                                "total_solved": stats.total_solved if stats else 0,
                                "total_points": stats.total_points if stats else 0})
-        return {"leaderboard": result}
+
+        response = {"leaderboard": result}
+        app_cache.put(cache_key, response, ttl_sec=30)
+        return response
     except Exception:
         raise HTTPException(status_code=500, detail="Ошибка при получении рейтинга")

@@ -1,30 +1,40 @@
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Date, UniqueConstraint
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Date, UniqueConstraint, Index, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import QueuePool
 from datetime import datetime
 import bcrypt
 
-# SQLite база для разработки
 DATABASE_URL = "sqlite:///./olimpiada.db"
 
-from sqlalchemy import event
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    pool_size=5,
+    max_overflow=10,
+    pool_recycle=300,
+    poolclass=QueuePool,
+)
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 
 @event.listens_for(engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor = dbapi_connection.cursor()
     cursor.execute("PRAGMA journal_mode=WAL")
     cursor.execute("PRAGMA synchronous=NORMAL")
+    cursor.execute("PRAGMA busy_timeout=5000")
+    cursor.execute("PRAGMA cache_size=-8000")  # 8MB cache
+    cursor.execute("PRAGMA temp_store=MEMORY")
     cursor.close()
+
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# Пользователи
+
 class User(Base):
     __tablename__ = "users"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(50), unique=True, index=True)
     email = Column(String(100), unique=True, index=True)
@@ -44,20 +54,20 @@ class User(Base):
     vk = Column(String(100))
     github = Column(String(100))
 
-# Задачи
+
 class Task(Base):
     __tablename__ = "tasks"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(200), index=True)
-    problem_statement = Column(Text)  # условие задачи
-    input_format = Column(Text)  # формат входных данных
-    output_format = Column(Text)  # формат выходных данных
-    examples = Column(Text)  # примеры входа/выхода (JSON)
-    answer = Column(String(500))  # правильный ответ
-    solution_explanation = Column(Text)  # объяснение решения
-    
-    # AI-генерация решений
+    problem_statement = Column(Text)
+    input_format = Column(Text)
+    output_format = Column(Text)
+    examples = Column(Text)
+    answer = Column(String(500))
+    solution_explanation = Column(Text)
+
+    # AI-генерация решений (отключено, но поля остаются)
     ai_answer_short = Column(Text)
     ai_solution_full = Column(Text)
     ai_solution_status = Column(String(32), default="empty")
@@ -65,28 +75,28 @@ class Task(Base):
     ai_solution_error = Column(Text)
     ai_solution_hash = Column(String(64))
     ai_solution_generated_at = Column(DateTime)
-    
-    difficulty = Column(String(20), default="easy", index=True)  # easy/medium/hard
+
+    difficulty = Column(String(20), default="easy", index=True)
     subject = Column(String(50), index=True)
     grade = Column(Integer, index=True)
     topic = Column(String(100))
-    tags = Column(String(200))  # теги через запятую
-    attachments = Column(Text)  # JSON-массив вложений (таблицы/графики/изображения)
+    tags = Column(String(200))
+    attachments = Column(Text)
     source_pdf_url = Column(Text)
     source_page_start = Column(Integer)
     source_page_end = Column(Integer)
-    source_fragments = Column(Text)  # JSON-массив bbox-фрагментов исходного PDF
+    source_fragments = Column(Text)
     source_solution_pdf_url = Column(Text)
     full_problem_statement = Column(Text)
     official_solution_text = Column(Text)
     free_ai_explanation = Column(Text)
     free_ai_status = Column(String(32), default="empty")
     points = Column(Integer, default=10)
-    time_limit = Column(Integer, default=300)  # секунд
+    time_limit = Column(Integer, default=300)
     created_by = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
 
-# Дневные просмотры задач для блока популярного в каталоге
+
 class TaskView(Base):
     __tablename__ = "task_views"
     __table_args__ = (UniqueConstraint("task_id", "viewed_on", name="uq_task_views_task_day"),)
@@ -97,24 +107,29 @@ class TaskView(Base):
     view_count = Column(Integer, default=0)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
-# Решения
+
 class Solution(Base):
     __tablename__ = "solutions"
-    
+    __table_args__ = (
+        Index("ix_solutions_user_task", "user_id", "task_id"),
+        Index("ix_solutions_user_task_viewed", "user_id", "task_id", "viewed_solution"),
+        Index("ix_solutions_user_task_correct", "user_id", "task_id", "is_correct"),
+    )
+
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), index=True)
     task_id = Column(Integer, ForeignKey("tasks.id"), index=True)
     answer = Column(String(500))
     is_correct = Column(Boolean, default=False)
-    solve_time = Column(Integer)  # секунд
+    solve_time = Column(Integer)
     points_earned = Column(Integer, default=0)
     viewed_solution = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-# PvP матчи
+
 class Match(Base):
     __tablename__ = "matches"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     player1_id = Column(Integer, ForeignKey("users.id"), index=True)
     player2_id = Column(Integer, ForeignKey("users.id"), index=True)
@@ -122,15 +137,15 @@ class Match(Base):
     winner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     player1_score = Column(Integer, default=0)
     player2_score = Column(Integer, default=0)
-    status = Column(String(20), default="waiting")  # waiting, active, finished, cancelled
+    status = Column(String(20), default="waiting")
     started_at = Column(DateTime)
     finished_at = Column(DateTime)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-# Статистика пользователей
+
 class UserStats(Base):
     __tablename__ = "user_stats"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True, index=True)
     total_solved = Column(Integer, default=0)
@@ -143,11 +158,12 @@ class UserStats(Base):
     best_streak = Column(Integer, default=0)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
-# Функции для работы с паролями
+
 def hash_password(password: str) -> str:
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashed.decode('utf-8')
+
 
 def verify_password(password: str, hashed: str) -> bool:
     try:
@@ -155,8 +171,10 @@ def verify_password(password: str, hashed: str) -> bool:
     except Exception:
         return False
 
+
 def create_tables():
     Base.metadata.create_all(bind=engine)
+
 
 def get_db():
     db = SessionLocal()

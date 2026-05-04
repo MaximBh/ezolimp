@@ -4,7 +4,10 @@ __pycache__/
 .venv/
 .env
 .env.local
+.env.local.bak
 .vscode/
+.idea/
 backend/cache/
 .ollama/
 *.log
+scratch/

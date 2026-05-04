@@ -2,16 +2,19 @@ from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.exceptions import RequestValidationError
 from pathlib import Path
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from app.database import get_db, create_tables, User, Task, Solution, Match
 from app.task_import import ensure_tasks_schema_columns, import_tasks_from_json, split_compound_tasks_after_import, has_seed_tasks
 from app.config import _sync_tasks_on_startup_enabled
 from app.routers import auth, users, tasks, admin, pvp
+import app.cache as app_cache
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -27,9 +30,6 @@ app.include_router(admin.router)
 app.include_router(pvp.router)
 
 
-from fastapi.exceptions import RequestValidationError
-
-
 @app.exception_handler(Exception)
 async def general_exception_handler(request, exc):
     return JSONResponse(status_code=500, content={"error": "Внутренняя ошибка сервера"})
@@ -42,11 +42,9 @@ async def http_exception_handler(request, exc):
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
-    # Extract readable messages from Pydantic validation errors
     messages = []
     for error in exc.errors():
         msg = error.get("msg", "")
-        # Strip "Value error, " prefix that Pydantic adds
         if msg.startswith("Value error, "):
             msg = msg[len("Value error, "):]
         messages.append(msg)
@@ -63,6 +61,8 @@ def startup():
         split_compound_tasks_after_import()
     else:
         print("Skipped tasks.json sync on startup: tasks already exist (set SYNC_TASKS_ON_STARTUP=1 to force)")
+    # Pre-warm caches
+    app_cache.clear()
 
 
 @app.get("/")
@@ -72,13 +72,18 @@ def root():
 
 @app.get("/stats")
 def stats(db: Session = Depends(get_db)):
+    cached = app_cache.get("stats")
+    if cached is not None:
+        return cached
     try:
-        return {
-            "users": db.query(User).count(),
-            "tasks": db.query(Task).count(),
-            "solutions": db.query(Solution).count(),
-            "matches": db.query(Match).count(),
+        result = {
+            "users": db.query(func.count(User.id)).scalar(),
+            "tasks": db.query(func.count(Task.id)).scalar(),
+            "solutions": db.query(func.count(Solution.id)).scalar(),
+            "matches": db.query(func.count(Match.id)).scalar(),
         }
+        app_cache.put("stats", result, ttl_sec=30)
+        return result
     except Exception:
         raise HTTPException(status_code=500, detail="Ошибка при получении статистики")
 

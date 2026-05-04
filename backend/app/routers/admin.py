@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db, User, Task
 from app.auth_middleware import get_admin_user
+import app.cache as app_cache
 from app.config import (
     _safe_int, _normalize_subject, _normalize_difficulty, _time_limit_by_difficulty,
     _is_manual_answer, _extract_source_url,
@@ -142,6 +143,7 @@ def import_tasks(tasks_data: dict, current_user: User = Depends(get_admin_user),
             ))
             imported_count += 1
         db.commit()
+        app_cache.invalidate_prefix("tasks:")
         return {"message": f"Imported tasks: {imported_count}"}
     except Exception as e:
         db.rollback()
@@ -154,6 +156,7 @@ def delete_all_tasks(current_user: User = Depends(get_admin_user), db: Session =
         count = db.query(Task).count()
         db.query(Task).delete()
         db.commit()
+        app_cache.invalidate_prefix("tasks:")
         return {"message": f"Удалено задач: {count}"}
     except Exception as e:
         db.rollback()
