@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EzOlimp — Рейтинг</title>
+<link rel="stylesheet" href="shared.css">
+<script>var d=document.documentElement;d.setAttribute("data-theme",localStorage.getItem("ez-theme")||"light");d.classList.add("no-transition");window.addEventListener("load",function(){d.classList.remove("no-transition")})</script>
+<style>
+.lb-wrap { max-width:900px; margin:0 auto; padding:96px 40px 80px; }
+.lb-tabs { display:flex; gap:8px; margin-bottom:20px; }
+.lb-tab {
+  padding:10px 24px; border-radius:10px; border:1px solid var(--border);
+  background:var(--surface); color:var(--text2); font-size:14px; font-weight:600;
+  cursor:pointer; transition:all .15s;
+}
+.lb-tab:hover { border-color:var(--accent-m); color:var(--accent); }
+.lb-tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+.lb-table { background:var(--surface); border:1px solid var(--border); border-radius:18px; overflow:hidden; transition:background .3s, border-color .3s; }
+.lb-head { display:grid; grid-template-columns:60px 1fr 1fr 100px 80px 80px; padding:14px 24px; background:var(--bg2); border-bottom:1px solid var(--border); font-size:12px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:var(--text3); transition:background .3s; }
+.lb-row { display:grid; grid-template-columns:60px 1fr 1fr 100px 80px 80px; padding:16px 24px; border-bottom:1px solid var(--border); align-items:center; transition:background .15s; }
+.lb-row:last-child { border-bottom:none; }
+.lb-row:hover { background:var(--bg2); }
+.lb-rank { font-size:18px; font-weight:800; }
+.lb-rank.gold   { color:#d97706; }
+.lb-rank.silver { color:#94a3b8; }
+.lb-rank.bronze { color:#b45309; }
+.lb-user { display:flex; align-items:center; gap:12px; }
+.lb-avatar { width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid var(--border); }
+.lb-name { font-size:15px; font-weight:600; }
+.lb-username { font-size:12px; color:var(--text3); }
+.lb-rating { display:inline-block; background:var(--accent-l); color:var(--accent); padding:4px 12px; border-radius:20px; font-size:14px; font-weight:700; border:1px solid var(--accent-m); }
+.lb-link { color:var(--accent); font-size:13px; text-decoration:none; font-weight:500; }
+.lb-link:hover { text-decoration:underline; }
+@media (max-width:700px) {
+  .lb-head { grid-template-columns:40px 1fr 90px; }
+  .lb-head span:nth-child(3), .lb-head span:nth-child(5), .lb-head span:nth-child(6) { display:none; }
+  .lb-row { grid-template-columns:40px 1fr 90px; }
+  .lb-row > *:nth-child(3), .lb-row > *:nth-child(5), .lb-row > *:nth-child(6) { display:none; }
+  .lb-wrap { padding:84px 20px 60px; }
+}
+</style>
+</head>
+<body>
+<div class="page-wrap">
+<canvas id="neural-bg"></canvas>
+<main>
+<div class="lb-wrap">
+  <div class="page-header" style="padding:0 0 12px">
+    <h1>Рейтинг</h1>
+    <p>Топ игроков платформы</p>
+  </div>
+
+  <div class="lb-tabs">
+    <button class="lb-tab active" id="tabElo" onclick="switchTab('elo')">По Elo рейтингу</button>
+    <button class="lb-tab" id="tabPoints" onclick="switchTab('points')">По баллам</button>
+  </div>
+
+  <div class="lb-table fade-up">
+    <div class="lb-head" id="lbHead">
+      <span>Место</span><span>Игрок</span><span>Школа</span>
+      <span>Рейтинг</span><span>Решено</span><span></span>
+    </div>
+    <div id="lbBody"><div style="padding:40px;text-align:center;color:var(--text3)">Загрузка...</div></div>
+  </div>
+</div>
+</main>
+</div>
+
+<script src="layout.js"></script>
+<script src="shared.js"></script>
+<script>
+renderNav('leaderboard.html');
+renderFooter();
+
+let currentSort = 'elo';
+
+function switchTab(sort) {
+  currentSort = sort;
+  document.getElementById('tabElo').classList.toggle('active', sort === 'elo');
+  document.getElementById('tabPoints').classList.toggle('active', sort === 'points');
+
+  // Update header labels
+  const head = document.getElementById('lbHead');
+  if (sort === 'points') {
+    head.innerHTML = '<span>Место</span><span>Игрок</span><span>Школа</span><span>Баллы</span><span>Решено</span><span></span>';
+  } else {
+    head.innerHTML = '<span>Место</span><span>Игрок</span><span>Школа</span><span>Рейтинг</span><span>Решено</span><span></span>';
+  }
+
+  loadLeaderboard(sort);
+}
+
+async function loadLeaderboard(sort = 'elo') {
+  document.getElementById('lbBody').innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)">Загрузка...</div>';
+  try {
+    const r = await fetch(`${API_URL}/leaderboard?sort=${sort}`);
+    const data = await r.json();
+    const lb = data.leaderboard || [];
+    if (!lb.length) {
+      document.getElementById('lbBody').innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)">Нет данных</div>';
+      return;
+    }
+    const rankClass = r => r===1?'gold':r===2?'silver':r===3?'bronze':'';
+    const rankIcon  = r => r<=3 ? ['🥇','🥈','🥉'][r-1] : r;
+
+    const valueCol = sort === 'points'
+      ? u => `<span class="lb-rating">${u.total_points ?? 0}</span>`
+      : u => `<span class="lb-rating">${u.rating}</span>`;
+
+    document.getElementById('lbBody').innerHTML = lb.map(u => `
+      <div class="lb-row">
+        <div class="lb-rank ${rankClass(u.rank)}">${rankIcon(u.rank)}</div>
+        <div class="lb-user">
+          <img class="lb-avatar" src="${u.avatar_url||'https://via.placeholder.com/36'}" alt="">
+          <div><div class="lb-name">${u.full_name||u.username}</div><div class="lb-username">@${u.username}</div></div>
+        </div>
+        <div style="font-size:14px;color:var(--text2)">${u.school||'—'}</div>
+        <div>${valueCol(u)}</div>
+        <div style="font-size:14px;color:var(--text2)">${u.total_solved}</div>
+        <div><a class="lb-link" href="profile.html?id=${u.id}">Профиль</a></div>
+      </div>`).join('');
+  } catch {
+    document.getElementById('lbBody').innerHTML = '<div style="padding:40px;text-align:center;color:var(--accent)">Ошибка загрузки</div>';
+  }
+}
+
+loadLeaderboard('elo');
+</script>
+</body>
+</html>

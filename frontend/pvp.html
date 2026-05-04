@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EzOlimp — PvP</title>
+<link rel="stylesheet" href="shared.css">
+<script>var d=document.documentElement;d.setAttribute("data-theme",localStorage.getItem("ez-theme")||"light");d.classList.add("no-transition");window.addEventListener("load",function(){d.classList.remove("no-transition")})</script>
+<style>
+.pvp-wrap { max-width:860px; margin:0 auto; padding:96px 40px 80px; }
+.screen { display:none; }
+.screen.active { display:block; }
+
+/* LOBBY */
+.lobby-card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:48px; text-align:center; transition:background .3s; }
+.lobby-icon { width:72px; height:72px; border-radius:18px; background:var(--accent-l); border:1px solid var(--accent-m); display:flex; align-items:center; justify-content:center; margin:0 auto 24px; }
+.lobby-icon svg { width:36px; height:36px; stroke:var(--accent); fill:none; stroke-width:1.5; stroke-linecap:round; }
+.lobby-card h1 { font-size:32px; font-weight:700; margin-bottom:10px; }
+.lobby-card p { font-size:16px; color:var(--text2); margin-bottom:32px; }
+.rules { background:var(--bg2); border-radius:14px; padding:20px 24px; margin-bottom:32px; text-align:left; transition:background .3s; }
+.rules li { font-size:14px; color:var(--text2); padding:5px 0; list-style:none; display:flex; align-items:center; gap:10px; }
+.rules li::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0; }
+
+/* SEARCHING */
+.searching-card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:48px; text-align:center; transition:background .3s; }
+.spinner { width:64px; height:64px; border:3px solid var(--border2); border-top-color:var(--accent); border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 24px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* MATCH */
+.vs-grid { display:grid; grid-template-columns:1fr auto 1fr; gap:16px; align-items:center; margin-bottom:20px; }
+.player-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:24px; text-align:center; transition:background .3s; }
+.player-avatar { width:56px; height:56px; border-radius:50%; object-fit:cover; border:2px solid var(--accent-m); margin:0 auto 10px; display:block; }
+.player-name { font-size:15px; font-weight:700; margin-bottom:4px; }
+.player-score { font-size:36px; font-weight:800; color:var(--accent); }
+.vs-badge { background:var(--accent-l); border:1px solid var(--accent-m); border-radius:12px; padding:12px 16px; text-align:center; font-size:18px; font-weight:800; color:var(--accent); }
+.match-card { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:32px; transition:background .3s; }
+.match-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px; }
+.match-timer { font-size:14px; color:var(--text3); font-variant-numeric:tabular-nums; }
+.match-statement { font-size:16px; line-height:1.75; color:var(--text); margin-bottom:24px; white-space:pre-line; }
+
+  /* VISUAL */
+  .visual-card {
+    background:var(--bg); border:1px solid var(--border); border-radius:14px;
+    padding:16px; margin-bottom:14px; transition:background .3s, border-color .3s;
+  }
+  .visual-card-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; }
+  .visual-card-head h3 { font-size:15px; }
+  .visual-pdf-link {
+    font-size:12px; font-weight:600; color:var(--accent); text-decoration:none;
+    border:1px solid var(--accent-m); background:var(--accent-l); padding:6px 10px; border-radius:8px;
+  }
+  .visual-pdf-link:hover { filter:brightness(.98); }
+  .visual-status { font-size:13px; color:var(--text2); margin-bottom:10px; }
+  .visual-grid { display:grid; gap:10px; }
+  .visual-fragment {
+    margin:0; border:1px solid var(--border); border-radius:10px; overflow:hidden;
+    background:var(--surface);
+  }
+  .visual-fragment img { width:100%; display:block; background:#fff; }
+  .visual-fragment figcaption {
+    font-size:12px; color:var(--text3); padding:7px 10px; border-top:1px solid var(--border);
+  }
+
+/* RESULT */
+.result-card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:48px; text-align:center; transition:background .3s; }
+.result-icon { width:72px; height:72px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; font-size:32px; }
+.result-win  { background:#dcfce7; }
+.result-lose { background:#fee2e2; }
+.result-draw { background:#fef9c3; }
+.result-scores { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:24px 0; }
+.result-score-box { background:var(--bg2); border-radius:12px; padding:16px; transition:background .3s; }
+.result-score-box p { font-size:12px; color:var(--text3); margin-bottom:4px; }
+.result-score-box span { font-size:28px; font-weight:800; color:var(--accent); }
+.rating-change { background:var(--accent-l); border:1px solid var(--accent-m); border-radius:12px; padding:14px; margin-bottom:24px; }
+.rating-change p { font-size:12px; color:var(--text3); margin-bottom:4px; }
+.rating-change span { font-size:24px; font-weight:800; color:var(--accent); }
+.result-btns { display:flex; gap:10px; justify-content:center; }
+
+@media (max-width:600px) {
+  .pvp-wrap { padding:84px 20px 60px; }
+  .vs-grid { grid-template-columns:1fr; }
+  .vs-badge { display:none; }
+}
+</style>
+</head>
+<body>
+<div class="page-wrap">
+<canvas id="neural-bg"></canvas>
+<main>
+<div class="pvp-wrap">
+
+  <div class="screen active" id="lobbyScreen">
+    <div class="lobby-card fade-up">
+      <div class="lobby-icon"><svg viewBox="0 0 24 24"><path d="M14.5 10c-.83 0-1.5-.67-1.5-1.5v-5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5z"/><path d="M20.5 10H19V8.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/><path d="M9.5 14c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5S8 21.33 8 20.5v-5c0-.83.67-1.5 1.5-1.5z"/><path d="M3.5 14H5v1.5c0 .83-.67 1.5-1.5 1.5S2 16.33 2 15.5 2.67 14 3.5 14z"/><path d="M14 14.5c0-.83.67-1.5 1.5-1.5h5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-5c-.83 0-1.5-.67-1.5-1.5z"/><path d="M15.5 19H14v1.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5-.67-1.5-1.5-1.5z"/><path d="M10 9.5C10 8.67 9.33 8 8.5 8h-5C2.67 8 2 8.67 2 9.5S2.67 11 3.5 11h5c.83 0 1.5-.67 1.5-1.5z"/><path d="M8.5 5H10V3.5C10 2.67 9.33 2 8.5 2S7 2.67 7 3.5 7.67 5 8.5 5z"/></svg></div>
+      <h1>PvP режим 1×1</h1>
+      <p>Соревнуйся с другими игроками в реальном времени</p>
+      <ul class="rules">
+        <li>Оба игрока получают одинаковую задачу</li>
+        <li>Побеждает тот, кто правильно решит задачу</li>
+        <li>Рейтинг изменяется по системе Elo</li>
+        <li>Автоподбор соперника по уровню рейтинга</li>
+      </ul>
+      <button class="btn btn-accent" id="findMatchBtn" style="font-size:16px;padding:14px 36px">Найти соперника</button>
+    </div>
+  </div>
+
+  <div class="screen" id="searchingScreen">
+    <div class="searching-card fade-up">
+      <div class="spinner"></div>
+      <h2 style="font-size:26px;font-weight:700;margin-bottom:10px">Поиск соперника...</h2>
+      <p style="color:var(--text2);margin-bottom:32px">Подбираем игрока вашего уровня</p>
+      <button class="btn btn-outline" id="cancelSearchBtn">Отменить</button>
+    </div>
+  </div>
+
+  <div class="screen" id="matchScreen">
+    <div class="vs-grid">
+      <div class="player-card">
+        <img class="player-avatar" id="yourAvatar" src="https://via.placeholder.com/56" alt="">
+        <div class="player-name" id="yourName">Вы</div>
+        <div class="player-score" id="yourScore">0</div>
+      </div>
+      <div class="vs-badge">VS</div>
+      <div class="player-card">
+        <img class="player-avatar" id="oppAvatar" src="https://via.placeholder.com/56" alt="">
+        <div class="player-name" id="oppName">Соперник</div>
+        <div class="player-score" id="oppScore" style="color:var(--text2)">0</div>
+      </div>
+    </div>
+    <div class="match-card">
+      <div class="match-header">
+        <h2 id="matchTitle" style="font-size:20px;font-weight:700">Задача</h2>
+        <div style="display:flex;gap:12px;align-items:center">
+          <span class="match-timer" id="matchTimer">00:00</span>
+          <span class="badge" id="matchDiff" style="background:var(--bg2);color:var(--text2)"></span>
+        </div>
+      </div>
+      <div class="visual-card" id="taskVisualCard" style="display:none">
+        <div class="visual-card-head">
+          <h3>Оригинал условия из PDF</h3>
+          <a id="taskPdfLink" class="visual-pdf-link" href="#" target="_blank" rel="noopener noreferrer" style="display:none">Открыть PDF</a>
+        </div>
+        <div id="taskVisualStatus" class="visual-status"></div>
+        <div id="taskVisualGrid" class="visual-grid"></div>
+      </div>
+      <div class="match-statement" id="matchStatement">Загрузка...</div>
+      <div class="answer-row" style="display:flex;gap:10px">
+        <input class="input" type="text" id="matchAnswer" placeholder="Введите ответ...">
+        <button class="btn btn-accent" id="submitMatchBtn">Отправить</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="resultScreen">
+    <div class="result-card fade-up">
+      <div class="result-icon" id="resultIcon"></div>
+      <h2 id="resultTitle" style="font-size:30px;font-weight:700;margin-bottom:8px"></h2>
+      <p id="resultMsg" style="color:var(--text2);margin-bottom:20px"></p>
+      <div class="result-scores">
+        <div class="result-score-box"><p>Ваш счёт</p><span id="finalYour">0</span></div>
+        <div class="result-score-box"><p>Счёт соперника</p><span id="finalOpp">0</span></div>
+      </div>
+      <div class="rating-change"><p>Изменение рейтинга</p><span id="ratingChange">+0</span></div>
+      <div class="result-btns">
+        <button class="btn btn-accent" id="playAgainBtn">Играть ещё</button>
+        <a href="main.html" class="btn btn-outline">На главную</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+</main>
+</div>
+
+
+<script src="layout.js"></script>
+<script src="shared.js"></script>
+<script>
+renderNav('pvp.html');
+renderFooter();
+
+const WS_URL = location.port === "3000"
+  ? `ws://${location.hostname}:8001`
+  : `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`;
+const user = JSON.parse(localStorage.getItem('user') || '{}');
+const token = localStorage.getItem('token');
+if (!token || !user.id) { location.href='main.html?auth=1'; }
+
+let ws=null, matchId=null, timerInterval=null, timerStart=null;
+let visualRequestSeq = 0;
+
+function toApiUrl(path) {
+  const value = String(path || '').trim();
+  if (!value) return '';
+  if (/^https?:\/\//i.test(value)) return value;
+  return `${API_URL}${value.startsWith('/') ? '' : '/'}${value}`;
+}
+function escHtml(v) { return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(v) { return String(v??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+function resetTaskVisual() {
+  const card = document.getElementById('taskVisualCard');
+  const status = document.getElementById('taskVisualStatus');
+  const grid = document.getElementById('taskVisualGrid');
+  const link = document.getElementById('taskPdfLink');
+  if (!card) return;
+  card.style.display = 'none';
+  status.textContent = '';
+  grid.innerHTML = '';
+  link.style.display = 'none';
+  link.removeAttribute('href');
+}
+function applyTaskPdfLink(sourcePdfUrl) {
+  const link = document.getElementById('taskPdfLink');
+  const target = toApiUrl(sourcePdfUrl);
+  if (!target) {
+    link.style.display = 'none';
+    link.removeAttribute('href');
+    return;
+  }
+  link.href = target;
+  link.style.display = 'inline-flex';
+}
+async function loadTaskVisual(task, seq) {
+  if (!task || !task.id) return;
+  const card = document.getElementById('taskVisualCard');
+  const status = document.getElementById('taskVisualStatus');
+  const grid = document.getElementById('taskVisualGrid');
+  const reasonText = {
+    no_source_pdf: 'У этой задачи не указан исходный PDF, показываем текстовую версию.',
+    source_pdf_unavailable: 'Не удалось получить исходный PDF, показываем текстовую версию.',
+    pdf_renderer_not_installed: 'Рендер PDF отключен на сервере, показываем текстовую версию.',
+    pdf_open_failed: 'Исходный PDF не открылся, показываем текстовую версию.',
+    no_fragments: 'Фрагменты в PDF не найдены, показываем текстовую версию.',
+    render_empty: 'Фрагменты не удалось отрисовать, показываем текстовую версию.',
+  };
+
+  card.style.display = 'block';
+  status.textContent = 'Загружаем визуал условия...';
+  grid.innerHTML = '';
+  applyTaskPdfLink(task.source_pdf_url || '');
+
+  const attachmentImages = (Array.isArray(task.attachments) ? task.attachments : [])
+    .filter(item => item && item.type === 'image' && item.image_url)
+    .map(item => ({
+      url: toApiUrl(item.image_url),
+      title: item.title || '',
+    }))
+    .filter(item => item.url);
+  if (attachmentImages.length) {
+    status.textContent = 'Скриншоты условия из PDF.';
+    grid.innerHTML = attachmentImages.map((img, index) => `
+      <figure class="visual-fragment">
+        <img src="${escAttr(img.url)}" alt="${escAttr(img.title || `Скрин условия ${index + 1}`)}" loading="${index < 2 ? 'eager' : 'lazy'}" decoding="async">
+        <figcaption>${escHtml(img.title || `Скрин ${index + 1}`)}</figcaption>
+      </figure>
+    `).join('');
+    return;
+  }
+
+  try {
+    const r = await fetch(`${API_URL}/tasks/${task.id}/visual?enrich=true`);
+    if (seq !== visualRequestSeq) return;
+    if (!r.ok) throw new Error();
+    const payload = await r.json();
+    if (seq !== visualRequestSeq) return;
+
+    const sourcePdfUrl = payload.source_pdf_url || task.source_pdf_url || '';
+    applyTaskPdfLink(sourcePdfUrl);
+
+    const images = Array.isArray(payload.images) ? payload.images.slice() : [];
+    if (payload.available && images.length) {
+      images.sort((a, b) => (Number(a.order_index) || 0) - (Number(b.order_index) || 0));
+      status.textContent = payload.visual_mode === 'bbox'
+        ? 'Фрагменты из оригинального PDF.'
+        : 'Показаны страницы исходного PDF.';
+      grid.innerHTML = images.map((img, index) => {
+        const src = escAttr(toApiUrl(img.url || ''));
+        const page = Number(img.page) || '?';
+        return `<figure class="visual-fragment">
+          <img src="${src}" alt="Фрагмент условия, страница ${page}" loading="${index < 2 ? 'eager' : 'lazy'}" decoding="async">
+          <figcaption>Страница ${page}</figcaption>
+        </figure>`;
+      }).join('');
+      return;
+    }
+
+    status.textContent = reasonText[payload.reason] || 'PDF-визуал недоступен, показываем текстовую версию.';
+    grid.innerHTML = '';
+    if (!sourcePdfUrl) card.style.display = 'none';
+  } catch {
+    if (seq !== visualRequestSeq) return;
+    const fallbackPdf = task.source_pdf_url || '';
+    applyTaskPdfLink(fallbackPdf);
+    status.textContent = fallbackPdf
+      ? 'Не удалось загрузить фрагменты. Можно открыть оригинальный PDF.'
+      : 'PDF-визуал сейчас недоступен, показываем текстовую версию.';
+    grid.innerHTML = '';
+    if (!fallbackPdf) card.style.display = 'none';
+  }
+}
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id !== 'matchScreen') resetTaskVisual();
+}
+
+function startTimer() {
+  timerStart = Date.now();
+  timerInterval = setInterval(()=>{
+    const s = Math.floor((Date.now()-timerStart)/1000);
+    document.getElementById('matchTimer').textContent =
+      String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+  },1000);
+}
+function stopTimer() { clearInterval(timerInterval); timerInterval=null; }
+
+document.getElementById('findMatchBtn').addEventListener('click', ()=>{
+  show('searchingScreen');
+  ws = new WebSocket(`${WS_URL}/ws/pvp/${user.id}`);
+  ws.onopen = ()=> ws.send(JSON.stringify({action:'find_match'}));
+  ws.onmessage = e => {
+    const d = JSON.parse(e.data);
+    if (d.type==='match_found') {
+      matchId = d.match_id;
+      document.getElementById('yourName').textContent = user.username;
+      document.getElementById('oppName').textContent = d.opponent;
+      document.getElementById('yourScore').textContent = 0;
+      document.getElementById('oppScore').textContent = 0;
+      document.getElementById('matchTitle').textContent = d.task.title;
+      document.getElementById('matchStatement').textContent = d.task.problem_statement;
+      document.getElementById('matchDiff').textContent = d.task.difficulty||'';
+      
+      const seq = ++visualRequestSeq;
+      loadTaskVisual(d.task, seq);
+      
+      show('matchScreen'); startTimer();
+    } else if (d.type==='answer_result') {
+      document.getElementById('yourScore').textContent = d.your_score;
+      document.getElementById('oppScore').textContent = d.opponent_score;
+    } else if (d.type==='match_finished') {
+      stopTimer();
+      const win = d.winner_id===user.id, draw = d.winner_id===null;
+      const icon = document.getElementById('resultIcon');
+      if (win)       { icon.className='result-icon result-win';  icon.textContent='🏆'; document.getElementById('resultTitle').textContent='Победа!'; }
+      else if (draw) { icon.className='result-icon result-draw'; icon.textContent='🤝'; document.getElementById('resultTitle').textContent='Ничья'; }
+      else           { icon.className='result-icon result-lose'; icon.textContent='😔'; document.getElementById('resultTitle').textContent='Поражение'; }
+      document.getElementById('resultMsg').textContent = win?'Поздравляем!':draw?'Равный бой':'В следующий раз повезёт';
+      document.getElementById('finalYour').textContent = d.your_score;
+      document.getElementById('finalOpp').textContent = d.opponent_score;
+      const rc = d.rating_change||0;
+      const rcEl = document.getElementById('ratingChange');
+      rcEl.textContent = (rc>=0?'+':'')+rc;
+      rcEl.style.color = rc>=0?'var(--accent)':'#ef4444';
+      show('resultScreen');
+    } else if (d.error) { alert('Ошибка: '+d.error); show('lobbyScreen'); }
+  };
+  ws.onerror = ()=>{ alert('Ошибка подключения'); show('lobbyScreen'); };
+  ws.onclose = ()=> stopTimer();
+});
+
+document.getElementById('cancelSearchBtn').addEventListener('click', ()=>{ ws?.close(); show('lobbyScreen'); });
+document.getElementById('submitMatchBtn').addEventListener('click', ()=>{
+  const ans = document.getElementById('matchAnswer').value.trim();
+  if (!ans||!ws||!matchId) return;
+  ws.send(JSON.stringify({action:'submit_answer',match_id:matchId,answer:ans}));
+  document.getElementById('submitMatchBtn').textContent='Изменить ответ';
+});
+document.getElementById('playAgainBtn').addEventListener('click', ()=>{ ws?.close(); show('lobbyScreen'); document.getElementById('matchAnswer').value=''; });
+</script>
+</body>
+</html>

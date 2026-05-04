@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EzOlimp — Тренировка</title>
+<link rel="stylesheet" href="shared.css">
+<script>var d=document.documentElement;d.setAttribute("data-theme",localStorage.getItem("ez-theme")||"light");d.classList.add("no-transition");window.addEventListener("load",function(){d.classList.remove("no-transition")})</script>
+<style>
+.training-wrap { max-width:860px; margin:0 auto; padding:96px 40px 80px; }
+.task-box {
+  background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:36px;
+  margin-bottom:20px; transition:background .3s, border-color .3s;
+}
+.task-box-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+.task-box-header h1 { font-size:26px; font-weight:700; letter-spacing:-.3px; }
+.task-meta-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+.task-statement-card {
+  background:var(--bg); border:1px solid var(--border); border-radius:14px;
+  padding:16px; margin-bottom:24px; transition:background .3s, border-color .3s;
+}
+.task-statement-card h3 { font-size:15px; margin-bottom:10px; }
+.task-statement { font-size:16px; line-height:1.75; color:var(--text); white-space:pre-line; margin:0; }
+.visual-card {
+  background:var(--bg); border:1px solid var(--border); border-radius:14px;
+  padding:16px; margin-bottom:14px; transition:background .3s, border-color .3s;
+}
+.visual-card-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; }
+.visual-card-head h3 { font-size:15px; }
+.visual-pdf-link {
+  font-size:12px; font-weight:600; color:var(--accent); text-decoration:none;
+  border:1px solid var(--accent-m); background:var(--accent-l); padding:6px 10px; border-radius:8px;
+}
+.visual-pdf-link:hover { filter:brightness(.98); }
+.visual-status { font-size:13px; color:var(--text2); margin-bottom:10px; }
+.visual-grid { display:grid; gap:10px; }
+.visual-fragment {
+  margin:0; border:1px solid var(--border); border-radius:10px; overflow:hidden;
+  background:var(--surface);
+}
+.visual-fragment img { width:100%; display:block; background:#fff; }
+.visual-fragment figcaption {
+  font-size:12px; color:var(--text3); padding:7px 10px; border-top:1px solid var(--border);
+}
+.answer-row { display:flex; gap:10px; margin-bottom:12px; }
+.answer-format-hint { font-size:13px; color:var(--text2); margin-bottom:8px; }
+.result-box { border-radius:12px; padding:20px 24px; margin-top:16px; font-size:15px; font-weight:500; }
+.result-ok   { background:#dcfce7; color:#166534; border:1px solid #bbf7d0; }
+.result-err  { background:#fee2e2; color:#991b1b; border:1px solid #fecaca; }
+.result-info { background:var(--accent-l); color:var(--accent); border:1px solid var(--accent-m); }
+.result-pending { background:#f3f4f6; color:#374151; border:1px solid #d1d5db; }
+.answer-checks { background:var(--surface); color:var(--text); border:1px solid var(--border); font-weight:500; }
+.answer-check-row {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:8px 0; border-bottom:1px solid var(--border);
+}
+.answer-check-row:last-of-type { border-bottom:none; }
+.answer-check-title { color:var(--text2); font-size:14px; }
+.answer-check-badge {
+  display:inline-flex; align-items:center; justify-content:center;
+  border-radius:999px; padding:5px 10px; font-size:12px; font-weight:700;
+  border:1px solid transparent; white-space:nowrap;
+}
+.answer-check-badge-ok { background:#dcfce7; color:#166534; border-color:#bbf7d0; }
+.answer-check-badge-err { background:#fee2e2; color:#991b1b; border-color:#fecaca; }
+.answer-check-badge-pending { background:#f3f4f6; color:#374151; border-color:#d1d5db; }
+.answer-check-badge-info { background:var(--accent-l); color:var(--accent); border-color:var(--accent-m); }
+.answer-check-summary { margin-top:10px; font-size:13px; color:var(--text2); line-height:1.45; }
+.solution-block {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+.solution-block h4 { margin-bottom: 8px; font-size: 14px; color: var(--text2); }
+.solution-ai-note {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text3);
+}
+.solution-status-alert {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.solution-progress {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--text2);
+}
+.solution-retry { margin-top: 10px; }
+[data-theme="dark"] .solution-status-alert {
+  background: #2d0a0a;
+  color: #fca5a5;
+  border-color: #7f1d1d;
+}
+.solution-block pre {
+  white-space: pre-wrap;
+  margin: 0;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.solution-ai-body {
+  white-space: pre-wrap;
+  margin: 0;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.task-report {
+  position:relative;
+  margin-top:16px;
+  display:inline-flex;
+  flex-direction:column;
+  align-items:flex-start;
+}
+.task-report-toggle {
+  border:1px solid var(--border2);
+  background:var(--surface);
+  color:var(--text2);
+  border-radius:9px;
+  padding:10px 12px;
+  font:inherit;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+  transition:border-color .15s, color .15s, background .3s;
+}
+.task-report-toggle:hover,
+.task-report.open .task-report-toggle {
+  border-color:var(--accent);
+  color:var(--accent);
+}
+.task-report-menu {
+  display:none;
+  margin-top:8px;
+  padding:8px;
+  min-width:180px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--surface);
+  box-shadow:0 10px 28px rgba(0,0,0,.12);
+}
+.task-report.open .task-report-menu {
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.task-report-link {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:34px;
+  padding:8px 12px;
+  border-radius:8px;
+  border:1px solid var(--accent-m);
+  background:var(--accent-l);
+  color:var(--accent);
+  text-decoration:none;
+  font-size:13px;
+  font-weight:700;
+}
+.task-report-link:hover {
+  border-color:var(--accent);
+}
+[data-theme="dark"] .result-ok  { background:#14301e; color:#4ade80; border-color:#166534; }
+[data-theme="dark"] .result-err { background:#2d0a0a; color:#f87171; border-color:#991b1b; }
+[data-theme="dark"] .result-pending { background:#1f2937; color:#d1d5db; border-color:#4b5563; }
+[data-theme="dark"] .answer-check-badge-ok { background:#14301e; color:#4ade80; border-color:#166534; }
+[data-theme="dark"] .answer-check-badge-err { background:#2d0a0a; color:#f87171; border-color:#991b1b; }
+[data-theme="dark"] .answer-check-badge-pending { background:#1f2937; color:#d1d5db; border-color:#4b5563; }
+
+.hints { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:24px 28px; transition:background .3s; }
+.hints h3 { font-size:17px; font-weight:700; margin-bottom:16px; }
+.hint-item { display:flex; align-items:flex-start; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); }
+.hint-item:last-child { border-bottom:none; }
+.hint-icon { width:32px; height:32px; border-radius:8px; background:var(--accent-l); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.hint-icon svg { width:16px; height:16px; stroke:var(--accent); fill:none; stroke-width:2; stroke-linecap:round; }
+.hint-text { font-size:14px; color:var(--text2); line-height:1.6; }
+
+@media (max-width:600px) { .training-wrap { padding:84px 20px 60px; } .answer-row { flex-direction:column; } }
+
+.ai-disabled-container { position:relative; overflow:hidden; border-radius:12px; }
+.ai-disabled-blur { filter:blur(10px); pointer-events:none; user-select:none; background:var(--bg2); opacity:0.6; min-height:32px; width:100%; }
+.ai-disabled-overlay {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--text); font-weight:600; font-size:14px; z-index:10;
+  pointer-events:none;
+}
+</style>
+</head>
+<body>
+<div class="page-wrap">
+<canvas id="neural-bg"></canvas>
+<main>
+<div class="training-wrap">
+
+  <div class="task-box fade-up">
+    <div class="task-box-header">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="btn btn-outline" id="backBtn" style="display:none">← Назад</button>
+        <h1 id="taskTitle">Загрузка задачи...</h1>
+      </div>
+    </div>
+    <div class="task-meta-row" id="taskMeta"></div>
+    <div class="visual-card" id="taskVisualCard" style="display:none">
+      <div class="visual-card-head">
+        <h3>Оригинал условия из PDF</h3>
+        <a id="taskPdfLink" class="visual-pdf-link" href="#" target="_blank" rel="noopener noreferrer" style="display:none">Открыть PDF</a>
+      </div>
+      <div id="taskVisualStatus" class="visual-status"></div>
+      <div id="taskVisualGrid" class="visual-grid"></div>
+    </div>
+    <div class="task-statement-card">
+      <h3>Текстовая версия условия</h3>
+      <div class="task-statement" id="taskStatement"></div>
+    </div>
+    <div id="answerSection" style="display:none">
+      <div class="answer-row">
+        <input class="input" type="text" id="answerInput" placeholder="Введите ответ...">
+        <button class="btn btn-accent" id="submitBtn">Проверить</button>
+        <button class="btn btn-outline" id="solutionBtn">Решение</button>
+      </div>
+      <div class="answer-format-hint" id="answerFormatHint"></div>
+      <div id="resultBox"></div>
+      <div class="task-report" id="taskReport">
+        <button class="task-report-toggle" id="taskReportToggle" type="button" aria-expanded="false">Нашли ошибку в условии или решении? - напишите нам.</button>
+        <div class="task-report-menu" id="taskReportMenu">
+          <a class="task-report-link" href="https://t.me/ezolimp?direct" target="_blank" rel="noopener noreferrer">Telegram</a>
+          <a class="task-report-link" href="https://mail.google.com/mail/u/4/#inbox?compose=VpCqJQvtZJlhFFdflqJsCHWfqqKlwMNXfvWHlRGbpLZhsMzXhrlJlvHQmgbKVhqDbWZlrVL" target="_blank" rel="noopener noreferrer">Mail</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hints fade-up">
+    <h3>Подсказки</h3>
+    <div class="hint-item">
+      <div class="hint-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+      <div class="hint-text">Внимательно прочитай условие задачи перед тем как начать решать</div>
+    </div>
+    <div class="hint-item">
+      <div class="hint-icon"><svg viewBox="0 0 24 24"><polyline points="20,6 9,17 4,12"/></svg></div>
+      <div class="hint-text">Проверь правильность формата ответа — иногда нужно целое число, иногда дробь</div>
+    </div>
+    <div class="hint-item">
+      <div class="hint-icon"><svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="8" y1="6" x2="10" y2="6"/></svg></div>
+      <div class="hint-text">Используй черновик для промежуточных вычислений</div>
+    </div>
+  </div>
+
+</div>
+</main>
+</div>
+
+
+<script src="layout.js"></script>
+<script src="shared.js"></script>
+<script>
+renderNav('training.html');
+renderFooter();
+
+const diffLabels = { easy:'Лёгкая', medium:'Средняя', hard:'Сложная' };
+let currentTask = null;
+let visualRequestSeq = 0;
+let solutionRequestSeq = 0;
+let solutionPollTimer = null;
+let solutionGenerationStartedAt = 0;
+let solutionGenerationTimerTaskId = null; // task id the timer belongs to
+let solutionTaskId = null;
+let solutionSnapshot = null;
+let solutionVisible = false;
+let lastSolveResult = null;
+let pendingAnswerCheck = null;
+let pendingAnswerTimer = null;
+let pendingAnswerInFlight = false;
+const SOLUTION_GENERATION_TIMEOUT_SEC = 600;
+const PENDING_CHECK_MAX_ATTEMPTS = 120;
+
+function escHtml(v) { return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function renderAiMarkdown(text) {
+  // Escape HTML first
+  let s = escHtml(String(text ?? ''));
+  // Remove any leftover [CONTINUE] markers
+  s = s.replace(/\s*\[CONTINUE\]\s*$/gi, '').trim();
+  // Rejoin "Итоговый\nответ:" split across lines into one line and rename to Ответ:
+  s = s.replace(/(итоговый)\s*\n\s*(ответ\s*:)/gi, 'Ответ:');
+  s = s.replace(/итоговый\s+ответ\s*:/gi, 'Ответ:');
+  // Rejoin "Ответ:\n<что-то>"
+  s = s.replace(/(ответ\s*:)\s*\n\s*/gi, '$1 ');
+  // Ensure "Ответ:" starts on its own line
+  s = s.replace(/([^\n])(\s*)(\*\*)?(?=ответ\s*:)/gi, (m, before) => before + '\n\n');
+  // Force newlines before 'Шаг X:' or 'X) ' if the model clumped them together
+  s = s.replace(/([.!?;])\s+(Шаг\s+\d+:)/gi, '$1\n$2');
+  s = s.replace(/([.!?;])\s+(\d+\)\s*(?:Идея|Пошаговое|Решение))/gi, '$1\n$2');
+  // Bold: **text** → <strong>text</strong>
+  s = s.replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>');
+  // Bold bare "Ответ:" and "Итоговый ответ:" lines for emphasis
+  s = s.replace(/^((?:итоговый )?ответ\s*:)/gim, '<strong>$1</strong>');
+  return s;
+}
+function escAttr(v) { return String(v??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function stripSource(t) { return (t||'').split('\n').filter(l=>!/^(source|источник)\s*:/i.test(l.trim())).join('\n').trim(); }
+function toApiUrl(path) {
+  const value = String(path || '').trim();
+  if (!value) return '';
+  if (/^https?:\/\//i.test(value)) return value;
+  return `${API_URL}${value.startsWith('/') ? '' : '/'}${value}`;
+}
+function resetTaskVisual() {
+  const card = document.getElementById('taskVisualCard');
+  const status = document.getElementById('taskVisualStatus');
+  const grid = document.getElementById('taskVisualGrid');
+  const link = document.getElementById('taskPdfLink');
+  card.style.display = 'none';
+  status.textContent = '';
+  grid.innerHTML = '';
+  link.style.display = 'none';
+  link.removeAttribute('href');
+}
+function applyTaskPdfLink(sourcePdfUrl) {
+  const link = document.getElementById('taskPdfLink');
+  const target = toApiUrl(sourcePdfUrl);
+  if (!target) {
+    link.style.display = 'none';
+    link.removeAttribute('href');
+    return;
+  }
+  link.href = target;
+  link.style.display = 'inline-flex';
+}
+async function loadTaskVisual(task, seq) {
+  if (!task || !task.id) return;
+  const card = document.getElementById('taskVisualCard');
+  const status = document.getElementById('taskVisualStatus');
+  const grid = document.getElementById('taskVisualGrid');
+  const reasonText = {
+    no_source_pdf: 'У этой задачи не указан исходный PDF, показываем текстовую версию.',
+    source_pdf_unavailable: 'Не удалось получить исходный PDF, показываем текстовую версию.',
+    pdf_renderer_not_installed: 'Рендер PDF отключен на сервере, показываем текстовую версию.',
+    pdf_open_failed: 'Исходный PDF не открылся, показываем текстовую версию.',
+    no_fragments: 'Фрагменты в PDF не найдены, показываем текстовую версию.',
+    render_empty: 'Фрагменты не удалось отрисовать, показываем текстовую версию.',
+  };
+
+  card.style.display = 'block';
+  status.textContent = 'Загружаем визуал условия...';
+  grid.innerHTML = '';
+  applyTaskPdfLink(task.source_pdf_url || '');
+
+  const attachmentImages = (Array.isArray(task.attachments) ? task.attachments : [])
+    .filter(item => item && item.type === 'image' && item.image_url)
+    .map(item => ({
+      url: toApiUrl(item.image_url),
+      title: item.title || '',
+    }))
+    .filter(item => item.url);
+  if (attachmentImages.length) {
+    status.textContent = 'Скриншоты условия из PDF.';
+    grid.innerHTML = attachmentImages.map((img, index) => `
+      <figure class="visual-fragment">
+        <img src="${escAttr(img.url)}" alt="${escAttr(img.title || `Скрин условия ${index + 1}`)}" loading="${index < 2 ? 'eager' : 'lazy'}" decoding="async">
+        <figcaption>${escHtml(img.title || `Скрин ${index + 1}`)}</figcaption>
+      </figure>
+    `).join('');
+    return;
+  }
+
+  try {
+    const r = await fetch(`${API_URL}/tasks/${task.id}/visual?enrich=true`);
+    if (seq !== visualRequestSeq) return;
+    if (!r.ok) throw new Error();
+    const payload = await r.json();
+    if (seq !== visualRequestSeq) return;
+
+    const sourcePdfUrl = payload.source_pdf_url || task.source_pdf_url || '';
+    applyTaskPdfLink(sourcePdfUrl);
+
+    const images = Array.isArray(payload.images) ? payload.images.slice() : [];
+    if (payload.available && images.length) {
+      images.sort((a, b) => (Number(a.order_index) || 0) - (Number(b.order_index) || 0));
+      status.textContent = payload.visual_mode === 'bbox'
+        ? 'Фрагменты из оригинального PDF.'
+        : 'Показаны страницы исходного PDF.';
+      grid.innerHTML = images.map((img, index) => {
+        const src = escAttr(toApiUrl(img.url || ''));
+        const page = Number(img.page) || '?';
+        return `<figure class="visual-fragment">
+          <img src="${src}" alt="Фрагмент условия, страница ${page}" loading="${index < 2 ? 'eager' : 'lazy'}" decoding="async">
+          <figcaption>Страница ${page}</figcaption>
+        </figure>`;
+      }).join('');
+      return;
+    }
+
+    status.textContent = reasonText[payload.reason] || 'PDF-визуал недоступен, показываем текстовую версию.';
+    grid.innerHTML = '';
+    if (!sourcePdfUrl) card.style.display = 'none';
+  } catch {
+    if (seq !== visualRequestSeq) return;
+    const fallbackPdf = task.source_pdf_url || '';
+    applyTaskPdfLink(fallbackPdf);
+    status.textContent = fallbackPdf
+      ? 'Не удалось загрузить фрагменты. Можно открыть оригинальный PDF.'
+      : 'PDF-визуал сейчас недоступен, показываем текстовую версию.';
+    grid.innerHTML = '';
+    if (!fallbackPdf) card.style.display = 'none';
+  }
+}
+
+async function loadTask(id=null) {
+  const seq = ++visualRequestSeq;
+  clearSolutionPolling();
+  clearPendingAnswerCheck();
+  resetSolutionGenerationTimer();
+  solutionVisible = false;
+  lastSolveResult = null;
+  solutionTaskId = null;
+  solutionSnapshot = null;
+  solutionRequestSeq += 1;
+  document.getElementById('taskTitle').textContent = 'Загрузка...';
+  document.getElementById('taskMeta').innerHTML = '';
+  document.getElementById('taskStatement').textContent = '';
+  document.getElementById('answerSection').style.display = 'none';
+  document.getElementById('resultBox').innerHTML = '';
+  document.getElementById('answerInput').value = '';
+  document.getElementById('answerFormatHint').textContent = '\u0424\u043e\u0440\u043c\u0430\u0442 \u043e\u0442\u0432\u0435\u0442\u0430: \u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043e\u0434\u0438\u043d \u043e\u0442\u0432\u0435\u0442. \u041d\u0430\u043f\u0440\u0438\u043c\u0435\u0440: 15 \u0438\u043b\u0438 \u043f\u0443\u0448\u043a\u0438\u043d.';
+  resetTaskVisual();
+
+  try {
+    let taskId = id;
+    if (!taskId) {
+      const listResp = await fetch(`${API_URL}/tasks`);
+      if (!listResp.ok) throw new Error();
+      const listData = await listResp.json();
+      const randomTask = (listData.tasks||[])[Math.floor(Math.random()*(listData.tasks||[]).length)];
+      taskId = randomTask ? randomTask.id : null;
+    }
+    if (!taskId) {
+      document.getElementById('taskTitle').textContent = 'Задачи не найдены';
+      return;
+    }
+    const r = await fetch(`${API_URL}/tasks/${taskId}?enrich=true`);
+    if (!r.ok) throw new Error();
+    currentTask = await r.json();
+    if (seq !== visualRequestSeq) return;
+    if (!currentTask) { document.getElementById('taskTitle').textContent = 'Задачи не найдены'; return; }
+
+    // Show back button if there's a previous page to return to
+    const backBtn = document.getElementById('backBtn');
+    if (backBtn) backBtn.style.display = (history.length > 1 && document.referrer) ? '' : 'none';
+
+    const diff = currentTask.difficulty || '';
+    const cls = { easy:'badge-easy', medium:'badge-medium', hard:'badge-hard' }[diff] || '';
+    document.getElementById('taskTitle').textContent = currentTask.title;
+    document.getElementById('taskMeta').innerHTML = `
+      <span class="badge ${cls}">${diffLabels[diff]||diff}</span>
+      <span class="badge" style="background:var(--bg2);color:var(--text2)">${currentTask.subject||''}</span>
+      ${currentTask.grade ? `<span class="badge" style="background:var(--bg2);color:var(--text2)">${currentTask.grade} класс</span>` : ''}
+      <span class="badge" style="background:var(--bg2);color:var(--text2)">${currentTask.points||10} баллов</span>`;
+    document.getElementById('taskStatement').textContent = stripSource(currentTask.full_problem_statement || currentTask.problem_statement || '');
+    loadTaskVisual(currentTask, seq);
+    document.getElementById('answerSection').style.display = 'block';
+    const formatHint = currentTask.answer_input_hint || '\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043e\u0434\u0438\u043d \u043e\u0442\u0432\u0435\u0442. \u041d\u0430\u043f\u0440\u0438\u043c\u0435\u0440: 15 \u0438\u043b\u0438 \u043f\u0443\u0448\u043a\u0438\u043d.';
+    document.getElementById('answerFormatHint').textContent = `\u0424\u043e\u0440\u043c\u0430\u0442 \u043e\u0442\u0432\u0435\u0442\u0430: ${formatHint}`;
+    startSolutionGenerationForCurrentTask(false, false);
+  } catch {
+    if (seq !== visualRequestSeq) return;
+    document.getElementById('taskTitle').textContent = 'Ошибка загрузки задачи';
+  }
+}
+
+function resolveCheckStatus(result, prefix, pendingFallback = false) {
+  const raw = String(result?.[`${prefix}_check_status`] || '').trim().toLowerCase();
+  if (raw) return raw;
+  const boolValue = result?.[`${prefix}_is_correct`];
+  if (typeof boolValue === 'boolean') {
+    return boolValue ? 'correct' : 'incorrect';
+  }
+  if (pendingFallback && result?.pending_ai_check) return 'pending';
+  return 'unavailable';
+}
+
+function checkStatusMeta(status, pendingMessage = '\u041f\u043e\u0434\u043e\u0436\u0434\u0438\u0442\u0435... \u0438\u0434\u0435\u0442 \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0430.') {
+  if (status === 'correct') return { text: '\u0412\u0435\u0440\u043d\u043e', cls: 'answer-check-badge-ok' };
+  if (status === 'incorrect') return { text: '\u041d\u0435\u0432\u0435\u0440\u043d\u043e', cls: 'answer-check-badge-err' };
+  if (status === 'pending') return { text: pendingMessage, cls: 'answer-check-badge-pending' };
+  return { text: '\u041d\u0435\u0442 \u044d\u0442\u0430\u043b\u043e\u043d\u0430', cls: 'answer-check-badge-info' };
+}
+
+function renderSolveResult(result) {
+  lastSolveResult = (result && typeof result === 'object') ? { ...result } : result;
+  if (solutionVisible) {
+    return;
+  }
+  const box = document.getElementById('resultBox');
+  if (result.manual_check) {
+    box.innerHTML = `<div class="result-box result-info">${escHtml(result.message || '\u0420\u0443\u0447\u043d\u0430\u044f \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0430')}</div>`;
+    return;
+  }
+
+  const vsoshStatus = resolveCheckStatus(result, 'vsosh', false);
+  const aiStatus = resolveCheckStatus(result, 'ai', true);
+  const vsoshMeta = checkStatusMeta(vsoshStatus);
+  const aiPendingMessage = result.pending_ai_check
+    ? (result.message || '\u041f\u043e\u0434\u043e\u0436\u0434\u0438\u0442\u0435... \u0438\u0434\u0435\u0442 \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0430.')
+    : '\u041f\u043e\u0434\u043e\u0436\u0434\u0438\u0442\u0435... \u0438\u0434\u0435\u0442 \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0430.';
+  const aiMeta = checkStatusMeta(aiStatus, aiPendingMessage);
+
+  const msg = String(result.message || '').trim();
+  const summary = (msg.includes('\u0438\u0434\u0435\u0442 \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0430')) ? '' : msg;
+  const pointsValue = Number(result.points_earned || 0);
+  const pointsLine = (Number.isFinite(pointsValue) && pointsValue > 0)
+    ? `<div class="answer-check-summary">\u041d\u0430\u0447\u0438\u0441\u043b\u0435\u043d\u043e \u0431\u0430\u043b\u043b\u043e\u0432: ${pointsValue}</div>`
+    : (vsoshStatus === 'incorrect' ? `<div class="answer-check-summary">\u0411\u0430\u043b\u043b\u044b \u043d\u0435 \u043d\u0430\u0447\u0438\u0441\u043b\u0435\u043d\u044b</div>` : '');
+  const summaryLine = summary ? `<div class="answer-check-summary">${escHtml(summary)}</div>` : '';
+
+  box.innerHTML = `<div class="result-box answer-checks">
+    <div class="answer-check-row">
+      <span class="answer-check-title">\u041f\u0440\u043e\u0432\u0435\u0440\u043a\u0430 \u043f\u043e \u0412\u0421\u041e\u0428</span>
+      <span class="answer-check-badge ${vsoshMeta.cls}">${escHtml(vsoshMeta.text)}</span>
+    </div>
+    <div class="answer-check-row ai-disabled-container">
+      <div class="ai-disabled-blur"></div>
+      <div class="ai-disabled-overlay" style="font-size:13px;">\u041d\u0435\u0439\u0440\u043e\u0441\u0435\u0442\u044c \u043d\u0430\u0445\u043e\u0434\u0438\u0442\u0441\u044f \u0432 \u0440\u0430\u0437\u0440\u0430\u0431\u043e\u0442\u043a\u0435...</div>
+    </div>
+    ${summaryLine}
+    ${pointsLine}
+  </div>`;
+}
+
+function collapseSolutionView() {
+  if (!solutionVisible) return;
+  solutionVisible = false;
+  const taskId = currentTask?.id ?? null;
+  const hasPending = Boolean(pendingAnswerCheck && pendingAnswerCheck.taskId === taskId);
+  if (hasPending) {
+    renderPendingAnswerCheck();
+    return;
+  }
+  if (lastSolveResult && typeof lastSolveResult === 'object') {
+    renderSolveResult(lastSolveResult);
+    return;
+  }
+  document.getElementById('resultBox').innerHTML = '';
+}
+
+function renderPendingAnswerCheck(result = null) {
+  if (result && typeof result === 'object') {
+    renderSolveResult(result);
+    return;
+  }
+  renderSolveResult({
+    manual_check: false,
+    pending_ai_check: true,
+    message: '',
+    vsosh_check_status: 'unavailable',
+    ai_check_status: 'pending',
+    points_earned: 0,
+  });
+}
+
+function clearPendingAnswerCheck() {
+  if (pendingAnswerTimer) {
+    clearTimeout(pendingAnswerTimer);
+    pendingAnswerTimer = null;
+  }
+  pendingAnswerCheck = null;
+  pendingAnswerInFlight = false;
+}
+
+function schedulePendingAnswerCheck(delayMs = 2500) {
+  if (!pendingAnswerCheck) return;
+  if (pendingAnswerTimer) {
+    clearTimeout(pendingAnswerTimer);
+  }
+  pendingAnswerTimer = setTimeout(() => runPendingAnswerCheck(), delayMs);
+}
+
+async function runPendingAnswerCheck() {
+  if (!pendingAnswerCheck || pendingAnswerInFlight) return;
+  if (!currentTask || currentTask.id !== pendingAnswerCheck.taskId) {
+    clearPendingAnswerCheck();
+    return;
+  }
+
+  pendingAnswerInFlight = true;
+  try {
+    const r = await fetch(`${API_URL}/tasks/${pendingAnswerCheck.taskId}/solve?user_answer=${encodeURIComponent(pendingAnswerCheck.answer)}`, {
+      method:'POST', headers:{ Authorization: pendingAnswerCheck.token }
+    });
+    const result = await r.json();
+    if (result.answer_input_hint) {
+      document.getElementById('answerFormatHint').textContent = `\u0424\u043e\u0440\u043c\u0430\u0442 \u043e\u0442\u0432\u0435\u0442\u0430: ${result.answer_input_hint}`;
+    }
+    if (result.pending_ai_check) {
+      pendingAnswerCheck.attempt = (pendingAnswerCheck.attempt || 0) + 1;
+      renderPendingAnswerCheck(result);
+      if (pendingAnswerCheck.attempt < PENDING_CHECK_MAX_ATTEMPTS) {
+        schedulePendingAnswerCheck();
+      } else {
+        clearPendingAnswerCheck();
+        renderSolveResult({
+          ...result,
+          pending_ai_check: false,
+          ai_check_status: 'unavailable',
+          ai_is_correct: null,
+          message: 'Проверка заняла слишком много времени. Попробуйте отправить ответ еще раз.',
+        });
+      }
+      return;
+    }
+
+    clearPendingAnswerCheck();
+    renderSolveResult(result);
+  } catch {
+    if (!pendingAnswerCheck) return;
+    pendingAnswerCheck.attempt = (pendingAnswerCheck.attempt || 0) + 1;
+    if (pendingAnswerCheck.attempt < PENDING_CHECK_MAX_ATTEMPTS) {
+      schedulePendingAnswerCheck(3000);
+    } else {
+      clearPendingAnswerCheck();
+      renderSolveResult({
+        manual_check: false,
+        pending_ai_check: false,
+        vsosh_check_status: 'unavailable',
+        ai_check_status: 'unavailable',
+        message: 'Не удалось завершить проверку. Попробуйте снова.',
+        points_earned: 0,
+      });
+    }
+  } finally {
+    pendingAnswerInFlight = false;
+  }
+}
+
+async function submitAnswer() {
+  const token = localStorage.getItem('token');
+  if (!token) { alert('Войдите в систему'); return; }
+  if (!currentTask) return;
+  const ans = document.getElementById('answerInput').value.trim();
+  if (!ans) return;
+  collapseSolutionView();
+  clearPendingAnswerCheck();
+  document.getElementById('resultBox').innerHTML = `<div class="result-box result-pending"></div>`;
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = '\u041e\u0442\u043f\u0440\u0430\u0432\u043a\u0430...';
+  try {
+    const r = await fetch(`${API_URL}/tasks/${currentTask.id}/solve?user_answer=${encodeURIComponent(ans)}`, {
+      method:'POST', headers:{ Authorization: token }
+    });
+    const result = await r.json();
+    if (result.answer_input_hint) {
+      document.getElementById('answerFormatHint').textContent = `\u0424\u043e\u0440\u043c\u0430\u0442 \u043e\u0442\u0432\u0435\u0442\u0430: ${result.answer_input_hint}`;
+    }
+    if (result.pending_ai_check) {
+      pendingAnswerCheck = {
+        taskId: currentTask.id,
+        answer: ans,
+        token,
+        attempt: 0,
+      };
+      renderPendingAnswerCheck(result);
+      startSolutionGenerationForCurrentTask(false, false);
+      schedulePendingAnswerCheck();
+      return;
+    }
+    renderSolveResult(result);
+  } catch {
+    alert('Ошибка проверки');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Проверить';
+  }
+}
+
+function clearSolutionPolling() {
+  if (solutionPollTimer) {
+    clearTimeout(solutionPollTimer);
+    solutionPollTimer = null;
+  }
+}
+
+function startSolutionGenerationTimer(taskId, serverStartedAt) {
+  // Prefer server-side start time for accurate sync across page navigations.
+  // Parse ISO string from ai_solution_generated_at if provided.
+  const serverMs = serverStartedAt ? (() => {
+    const raw = String(serverStartedAt).trim();
+    const normalized = /(?:z|[+\-]\d{2}:\d{2})$/i.test(raw) ? raw : `${raw}Z`;
+    const ms = Date.parse(normalized);
+    return Number.isFinite(ms) ? ms : 0;
+  })() : 0;
+
+  // Only reset if this is a new task or timer not yet running
+  if (!solutionGenerationStartedAt || solutionGenerationTimerTaskId !== (taskId ?? null)) {
+    solutionGenerationStartedAt = serverMs || Date.now();
+    solutionGenerationTimerTaskId = taskId ?? null;
+  } else if (serverMs && Math.abs(serverMs - solutionGenerationStartedAt) > 3000) {
+    // Re-sync if server time differs by more than 3 sec (e.g. after page reload)
+    solutionGenerationStartedAt = serverMs;
+  }
+}
+
+function resetSolutionGenerationTimer() {
+  solutionGenerationStartedAt = 0;
+  solutionGenerationTimerTaskId = null;
+}
+
+function getSolutionGenerationSeconds() {
+  if (!solutionGenerationStartedAt) return 0;
+  return Math.max(1, Math.floor((Date.now() - solutionGenerationStartedAt) / 1000));
+}
+
+function renderSolutionLoading() {}
+
+function isAiTemplateText(text) {
+  const normalized = String(text || '').trim().toLowerCase();
+  if (!normalized) return false;
+  const markers = [
+    'extract all numeric and logical constraints',
+    'apply an appropriate method step by step',
+    'validate the result against every condition',
+    'final answer: see detailed reasoning',
+    'official materials',
+    'see editorial',
+    '\u0440\u0435\u0448\u0435\u043d\u0438\u0435 (\u0441\u0433\u0435\u043d\u0435\u0440\u0438\u0440\u043e\u0432\u0430\u043d\u043e \u043d\u0435\u0439\u0440\u043e\u0441\u0435\u0442\u044c\u044e): \u0438\u0434\u0435\u044f:',
+    '(\u0441\u0433\u0435\u043d\u0435\u0440\u0438\u0440\u043e\u0432\u0430\u043d\u043e \u043d\u0435\u0439\u0440\u043e\u0441\u0435\u0442\u044c\u044e)',
+    'solution (generated by ai): idea:',
+    '\u0441\u043c. \u0440\u0435\u0448\u0435\u043d\u0438\u0435',
+    '\u0441\u043c. \u0440\u0430\u0437\u0431\u043e\u0440',
+    '\u0432\u043d\u0438\u043c\u0430\u0442\u0435\u043b\u044c\u043d\u043e \u0432\u044b\u043f\u0438\u0441\u044b\u0432\u0430\u0435\u043c \u0434\u0430\u043d\u043d\u044b\u0435 \u0437\u0430\u0434\u0430\u0447\u0438',
+    '\u0432\u044b\u0431\u0438\u0440\u0430\u0435\u043c \u043f\u043e\u0434\u0445\u043e\u0434\u044f\u0449\u0438\u0439 \u043c\u0435\u0442\u043e\u0434',
+    '\u043e\u0444\u0438\u0446\u0438\u0430\u043b\u044c\u043d\u043e\u0435 \u0440\u0435\u0448\u0435\u043d\u0438\u0435 \u0432\u0441\u043e\u0448 \u043f\u043e\u043a\u0430 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u043e \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u0435\u0441\u043a\u0438',
+    '\u043f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 pdf-\u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0438 \u0437\u0430\u0434\u0430\u0447\u0438',
+    '\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043f\u0440\u043e\u0447\u0438\u0442\u0430\u0442\u044c pdf \u0443\u0441\u043b\u043e\u0432\u0438\u044f',
+  ];
+  return markers.some(marker => normalized.includes(marker));
+}
+
+function buildAiErrorMessage(sol, aiStatus) {
+  const backendError = String(sol?.ai_solution_error || '').trim();
+  if (aiStatus === 'timeout') {
+    return backendError || 'Генерация превысила лимит времени и была остановлена.';
+  }
+  return backendError || 'Не удалось сгенерировать решение. Попробуйте позже.';
+}
+
+function isRetryableAiStatus(aiStatus) {
+  return ['timeout', 'error', 'failed', 'unavailable', 'rate_limited'].includes(String(aiStatus || '').toLowerCase());
+}
+
+function renderSolutionBox(aiAnswerRaw, vsoshAnswerRaw, official, aiText, aiPending = false, aiError = '', showRetry = false) {
+  const elapsed = getSolutionGenerationSeconds();
+  const pendingRetry = aiPending && elapsed >= SOLUTION_GENERATION_TIMEOUT_SEC;
+  const retryAllowed = Boolean(showRetry || pendingRetry);
+  const aiPlaceholder = aiPending
+    ? ('\u0414\u0443\u043c\u0430\u044e... \u0433\u0435\u043d\u0435\u0440\u0438\u0440\u0443\u044e \u0440\u0435\u0448\u0435\u043d\u0438\u0435 (' + (elapsed || 1) + ' \u0441\u0435\u043a).')
+    : (aiError || '\u0417\u0430\u0433\u0440\u0443\u0437\u043a\u0430...');
+  const aiBody = aiText || aiPlaceholder;
+  const aiAnswerLabel = aiAnswerRaw || '\u043f\u043e\u043a\u0430 \u043d\u0435 \u0441\u0433\u0435\u043d\u0435\u0440\u0438\u0440\u043e\u0432\u0430\u043d';
+  const vsoshAnswerLabel = vsoshAnswerRaw || '\u043f\u043e\u043a\u0430 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d';
+  if (!aiPending) {
+    resetSolutionGenerationTimer();
+  }
+  const alertHtml = (!aiPending && aiError)
+    ? `<div class="solution-status-alert">${escHtml(aiError)}</div>`
+    : '';
+  const progressHtml = aiPending
+    ? `<div class="solution-progress"><span>\u0413\u0435\u043d\u0435\u0440\u0430\u0446\u0438\u044f \u0440\u0435\u0448\u0435\u043d\u0438\u044f: ${elapsed || 1} \u0441\u0435\u043a.</span>${pendingRetry ? `<button class="btn btn-outline" id="retryGenerationBtn">\u041f\u043e\u043f\u0440\u043e\u0431\u043e\u0432\u0430\u0442\u044c \u0441\u0433\u0435\u043d\u0435\u0440\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0440\u0435\u0448\u0435\u043d\u0438\u0435 \u0435\u0449\u0435 \u0440\u0430\u0437</button>` : ''}</div>`
+    : '';
+  const retryHtml = (!aiPending && showRetry)
+    ? `<div class="solution-retry"><button class="btn btn-outline" id="retryGenerationBtn">\u041f\u043e\u043f\u0440\u043e\u0431\u043e\u0432\u0430\u0442\u044c \u0441\u0433\u0435\u043d\u0435\u0440\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0440\u0435\u0448\u0435\u043d\u0438\u0435 \u0435\u0449\u0435 \u0440\u0430\u0437</button></div>`
+    : '';
+  document.getElementById('resultBox').innerHTML = `<div class="result-box result-info">
+    <div class="ai-disabled-container" style="margin-bottom:12px;">
+      <div class="ai-disabled-blur"></div>
+      <div class="ai-disabled-overlay" style="font-size:13px;">\u041d\u0435\u0439\u0440\u043e\u0441\u0435\u0442\u044c \u043d\u0430\u0445\u043e\u0434\u0438\u0442\u0441\u044f \u0432 \u0440\u0430\u0437\u0440\u0430\u0431\u043e\u0442\u043a\u0435...</div>
+    </div>
+    <strong>\u041e\u0442\u0432\u0435\u0442 \u0412\u0421\u041e\u0428:</strong> ${escHtml(vsoshAnswerLabel)}
+    <div class="solution-block">
+      <h4>\u041e\u0444\u0438\u0446\u0438\u0430\u043b\u044c\u043d\u043e\u0435 \u0440\u0435\u0448\u0435\u043d\u0438\u0435 \u0438\u0437 PDF \u0412\u0421\u041e\u0428</h4>
+      <pre>${escHtml(official || '\u041e\u0444\u0438\u0446\u0438\u0430\u043b\u044c\u043d\u044b\u0439 \u0442\u0435\u043a\u0441\u0442 \u0440\u0435\u0448\u0435\u043d\u0438\u044f \u043f\u043e\u043a\u0430 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d.')}</pre>
+    </div>
+    <div class="solution-block ai-disabled-container">
+      <div class="ai-disabled-blur"></div>
+      <div class="ai-disabled-overlay">\u041d\u0435\u0439\u0440\u043e\u0441\u0435\u0442\u044c \u043d\u0430\u0445\u043e\u0434\u0438\u0442\u0441\u044f \u0432 \u0440\u0430\u0437\u0440\u0430\u0431\u043e\u0442\u043a\u0435...</div>
+    </div>
+  </div>`;
+  if (retryAllowed) {
+    const retryBtn = document.getElementById('retryGenerationBtn');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', () => showSolution(true));
+    }
+  }
+}
+
+function isErrorAiStatus(aiStatus) {
+  return ['error', 'invalid_api_key', 'rate_limited', 'model_not_found', 'no_api_key', 'timeout', 'unavailable', 'failed'].includes(String(aiStatus || '').toLowerCase());
+}
+
+function isSolutionGenerating(sol, rawAiText = '') {
+  const aiStatus = String(sol?.ai_solution_status || '').toLowerCase();
+  const aiSource = String(sol?.ai_generation_source || '').toLowerCase();
+  return aiStatus === 'generating'
+    || String(sol?.free_ai_status || '').toLowerCase() === 'generating'
+    || aiSource === 'queued'
+    || aiSource === 'queued_existing'
+    || isAiTemplateText(rawAiText);
+}
+
+function extractFinalAnswerFromAiText(text) {
+  const raw = String(text || '').trim();
+  if (!raw) return '';
+  // Match Russian "Итоговый ответ:" / "Ответ:" and English "Final answer:"
+  // Use global flag to find ALL matches and take the last one (avoids grabbing trailing text on same line)
+  const patterns = [
+    /(?:^|\n)\s*(?:[-*\u2022]\s*)?(?:\*\*)?(?:итоговый\s+)?ответ(?:\*\*)?\s*[:\-]\s*([^\n\r]+)/gim,
+    /(?:^|\n)\s*(?:[-*\u2022]\s*)?(?:\*\*)?final\s+answer(?:\*\*)?\s*[:\-]\s*([^\n\r]+)/gim,
+  ];
+  for (const pattern of patterns) {
+    let match, lastMatch = null;
+    while ((match = pattern.exec(raw)) !== null) { lastMatch = match; }
+    if (lastMatch) {
+      // Strip markdown bold markers and trim; also cut off anything after double space (continuation on same line)
+      const candidate = String(lastMatch[1] || '').replace(/\*\*/g, '').replace(/\s{2,}.*$/, '').trim();
+      if (candidate) return candidate;
+    }
+  }
+
+  const lines = raw.split(/\r?\n/).map(line => line.trim()).filter(Boolean).slice(-20).reverse();
+  for (const line of lines) {
+    const match = line.match(/^\s*(?:[-*\u2022]\s*)?(?:\*\*)?([^:\n\r]{1,80})(?:\*\*)?\s*[:\-]\s*(.+)$/);
+    if (!match || !match[2]) continue;
+    const label = String(match[1] || '').toLowerCase().trim();
+    const candidate = String(match[2] || '').replace(/\*\*/g, '').trim();
+    if (!candidate) continue;
+    const compact = candidate.replace(/[\s,;:]+/g, '');
+    if (!compact) continue;
+    if (!label.includes('answer') && !label.includes('ответ') && (candidate.length > 160 || candidate.split(/\s+/).length > 10)) {
+      continue;
+    }
+    return candidate;
+  }
+  return '';
+}
+
+function renderSolutionFromSnapshot(sol) {
+  const rawAiText = sol?.free_ai_explanation || '';
+  const aiText = isAiTemplateText(rawAiText) ? '' : rawAiText;
+  const extractedAiAnswer = extractFinalAnswerFromAiText(rawAiText || aiText);
+  const aiAnswerRaw = String(sol?.ai_answer_raw || extractedAiAnswer || '').trim();
+  const vsoshAnswerRaw = String(sol?.vsosh_answer_raw || '').trim();
+  const official = sol?.official_solution_text || '';
+  const aiStatus = String(sol?.ai_solution_status || '').toLowerCase();
+  const isGenerating = isSolutionGenerating(sol, rawAiText);
+
+  if (aiText) {
+    renderSolutionBox(aiAnswerRaw, vsoshAnswerRaw, official, aiText, isGenerating, '');
+    return;
+  }
+
+  if (isErrorAiStatus(aiStatus)) {
+    const errorMessage = buildAiErrorMessage(sol, aiStatus);
+    renderSolutionBox(aiAnswerRaw, vsoshAnswerRaw, official, '', false, errorMessage, isRetryableAiStatus(aiStatus));
+    return;
+  }
+
+  if (isGenerating) {
+    startSolutionGenerationTimer(solutionTaskId, sol?.ai_solution_generated_at);
+    renderSolutionBox(aiAnswerRaw, vsoshAnswerRaw, official, '', true, '');
+    return;
+  }
+
+  renderSolutionBox(aiAnswerRaw, vsoshAnswerRaw, official, '', false, '\u041f\u043e\u044f\u0441\u043d\u0435\u043d\u0438\u0435 \u043f\u043e\u043a\u0430 \u043d\u0435 \u0441\u0433\u0435\u043d\u0435\u0440\u0438\u0440\u043e\u0432\u0430\u043d\u043e.', true);
+}
+
+function handleSolutionSnapshot(sol, token, taskId, seq, attempt = 0) {
+  if (seq !== solutionRequestSeq || taskId !== solutionTaskId) return;
+  solutionSnapshot = sol || null;
+  const hasPendingAnswerCheck = Boolean(pendingAnswerCheck && pendingAnswerCheck.taskId === taskId);
+
+  const rawAiText = sol?.free_ai_explanation || '';
+  const aiText = isAiTemplateText(rawAiText) ? '' : rawAiText;
+  const aiStatus = String(sol?.ai_solution_status || '').toLowerCase();
+  const isGenerating = isSolutionGenerating(sol, rawAiText);
+  const isError = isErrorAiStatus(aiStatus);
+
+  if (solutionVisible) {
+    renderSolutionFromSnapshot(sol);
+  }
+
+  if (hasPendingAnswerCheck && (aiText || isError || !isGenerating)) {
+    schedulePendingAnswerCheck(150);
+  }
+
+  if (isError || !isGenerating) {
+    clearSolutionPolling();
+    return;
+  }
+
+  startSolutionGenerationTimer(taskId, sol?.ai_solution_generated_at);
+  const elapsed = getSolutionGenerationSeconds();
+  if (elapsed >= SOLUTION_GENERATION_TIMEOUT_SEC) {
+    clearSolutionPolling();
+    if (hasPendingAnswerCheck) {
+      schedulePendingAnswerCheck(150);
+    }
+    return;
+  }
+  const maxPollAttempts = Math.ceil((SOLUTION_GENERATION_TIMEOUT_SEC * 1000) / 500);
+  if (attempt < maxPollAttempts && seq === solutionRequestSeq && taskId === solutionTaskId) {
+    clearSolutionPolling();
+    solutionPollTimer = setTimeout(() => pollAiSolution(taskId, token, seq, attempt + 1), 500);
+  } else {
+    clearSolutionPolling();
+  }
+}
+
+async function pollAiSolution(taskId, token, seq, attempt = 0) {
+  if (seq !== solutionRequestSeq || taskId !== solutionTaskId) return;
+  try {
+    const r = await fetch(`${API_URL}/tasks/${taskId}/solution?mark_viewed=false&enrich=false&wait_for_ai=false&_t=${Date.now()}`, { headers:{ Authorization: token } });
+    if (!r.ok) throw new Error();
+    const sol = await r.json();
+    if (seq !== solutionRequestSeq || taskId !== solutionTaskId) return;
+    handleSolutionSnapshot(sol, token, taskId, seq, attempt);
+  } catch {
+    if (seq !== solutionRequestSeq || taskId !== solutionTaskId) return;
+    if (attempt < 20) {
+      clearSolutionPolling();
+      solutionPollTimer = setTimeout(() => pollAiSolution(taskId, token, seq, attempt + 1), 3000);
+      return;
+    }
+    clearSolutionPolling();
+  }
+}
+
+async function startSolutionGenerationForCurrentTask(forceRegenerate = false, revealSolution = false) {
+  if (!currentTask || !currentTask.id) return;
+  const token = localStorage.getItem('token');
+  if (!token) return;
+
+  const taskId = currentTask.id;
+  const isNewTask = solutionTaskId !== taskId;
+  if (revealSolution) {
+    solutionVisible = true;
+  }
+
+  if (!forceRegenerate && !isNewTask && solutionSnapshot) {
+    if (solutionVisible) {
+      renderSolutionFromSnapshot(solutionSnapshot);
+    }
+    // Notify server that user explicitly viewed the solution
+    if (revealSolution) {
+      fetch(`${API_URL}/tasks/${taskId}/solution?mark_viewed=true&enrich=false&wait_for_ai=false`, { headers:{ Authorization: token } }).catch(() => {});
+    }
+    if (isSolutionGenerating(solutionSnapshot, solutionSnapshot.free_ai_explanation || '') && !solutionPollTimer) {
+      startSolutionGenerationTimer(taskId, solutionSnapshot.ai_solution_generated_at);
+      if (getSolutionGenerationSeconds() < SOLUTION_GENERATION_TIMEOUT_SEC) {
+        pollAiSolution(taskId, token, solutionRequestSeq, 0);
+      }
+    }
+    return;
+  }
+
+  if (!forceRegenerate && !isNewTask && solutionPollTimer) {
+    if (solutionVisible) {
+      renderSolutionLoading();
+    }
+    return;
+  }
+
+  if (isNewTask || forceRegenerate || !solutionRequestSeq) {
+    clearSolutionPolling();
+    solutionTaskId = taskId;
+    solutionSnapshot = null;
+    solutionRequestSeq += 1;
+    resetSolutionGenerationTimer();
+  }
+
+  const seq = solutionRequestSeq;
+  startSolutionGenerationTimer(taskId);
+  if (solutionVisible) {
+    renderSolutionLoading();
+  }
+
+  try {
+    const markViewed = revealSolution ? 'true' : 'false';
+    const query = forceRegenerate
+      ? `mark_viewed=${markViewed}&enrich=false&wait_for_ai=false&force_regenerate=true`
+      : `mark_viewed=${markViewed}&enrich=false&wait_for_ai=false`;
+    const r = await fetch(`${API_URL}/tasks/${taskId}/solution?${query}`, { headers:{ Authorization: token } });
+    if (!r.ok) throw new Error();
+    const sol = await r.json();
+    if (seq !== solutionRequestSeq || taskId !== solutionTaskId) return;
+    handleSolutionSnapshot(sol, token, taskId, seq, 0);
+  } catch {
+    if (seq !== solutionRequestSeq || taskId !== solutionTaskId) return;
+    clearSolutionPolling();
+    if (solutionVisible) {
+      resetSolutionGenerationTimer();
+      alert('Ошибка получения решения');
+    }
+  }
+}
+
+async function showSolution(forceRegenerate = false) {
+  if (typeof forceRegenerate === 'object' && forceRegenerate !== null) {
+    forceRegenerate = false;
+  }
+  const token = localStorage.getItem('token');
+  if (!token) { alert('Войдите в систему'); return; }
+  if (!currentTask) return;
+  if (solutionVisible && !forceRegenerate) {
+    collapseSolutionView();
+    return;
+  }
+  solutionVisible = true;
+  await startSolutionGenerationForCurrentTask(Boolean(forceRegenerate), true);
+}
+
+document.getElementById('backBtn').addEventListener('click', () => history.back());
+document.getElementById('submitBtn').addEventListener('click', submitAnswer);
+document.getElementById('solutionBtn').addEventListener('click', () => showSolution(false));
+document.getElementById('answerInput').addEventListener('keypress', e => { if(e.key==='Enter') submitAnswer(); });
+document.getElementById('taskReportToggle').addEventListener('click', event => {
+  event.stopPropagation();
+  const report = document.getElementById('taskReport');
+  const isOpen = report.classList.toggle('open');
+  document.getElementById('taskReportToggle').setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+});
+document.addEventListener('click', event => {
+  const report = document.getElementById('taskReport');
+  if (!report || report.contains(event.target)) return;
+  report.classList.remove('open');
+  document.getElementById('taskReportToggle').setAttribute('aria-expanded', 'false');
+});
+
+const taskId = new URLSearchParams(location.search).get('task');
+loadTask(taskId);
+</script>
+</body>
+</html>
+
