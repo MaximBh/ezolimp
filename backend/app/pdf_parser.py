@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from typing import Any
 from app.utils.safe_http import MAX_PDF_PAGES
+from app.utils.pdfium_runtime import pdfium_lock
 
 try:
     import pypdfium2 as pdfium
@@ -805,33 +806,34 @@ def _extract_pages(pdf_path: Path) -> list[dict[str, Any]]:
     if pdfium is None:
         raise RuntimeError("pypdfium2 is not installed")
 
-    document = pdfium.PdfDocument(str(pdf_path))
-    pages: list[dict[str, Any]] = []
-    try:
-        if len(document) > MAX_PDF_PAGES:
-            raise RuntimeError("PDF exceeds the page limit")
-        for page_index in range(len(document)):
-            page = document[page_index]
-            text_page = page.get_textpage()
-            try:
-                text = text_page.get_text_range() or ""
-                width, height = page.get_size()
-                line_records = _extract_page_lines(text_page, text, width, height)
-            finally:
-                text_page.close()
-            pages.append(
-                {
-                    "page": page_index + 1,
-                    "text": text,
-                    "lines": line_records,
-                    "width": width,
-                    "height": height,
-                }
-            )
-            page.close()
-    finally:
-        document.close()
-    return pages
+    with pdfium_lock:
+        document = pdfium.PdfDocument(str(pdf_path))
+        pages: list[dict[str, Any]] = []
+        try:
+            if len(document) > MAX_PDF_PAGES:
+                raise RuntimeError("PDF exceeds the page limit")
+            for page_index in range(len(document)):
+                page = document[page_index]
+                text_page = page.get_textpage()
+                try:
+                    text = text_page.get_text_range() or ""
+                    width, height = page.get_size()
+                    line_records = _extract_page_lines(text_page, text, width, height)
+                finally:
+                    text_page.close()
+                pages.append(
+                    {
+                        "page": page_index + 1,
+                        "text": text,
+                        "lines": line_records,
+                        "width": width,
+                        "height": height,
+                    }
+                )
+                page.close()
+        finally:
+            document.close()
+        return pages
 
 
 def _detect_entries(pages: list[dict[str, Any]]) -> list[dict[str, Any]]:

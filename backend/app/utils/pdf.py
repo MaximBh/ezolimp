@@ -3,7 +3,9 @@ import json
 import re
 import math
 import time
+from threading import Lock
 from pathlib import Path
+from uuid import uuid4
 from app.config import (
     _safe_int, PDF_SOURCE_CACHE_DIR, PDF_FRAGMENT_CACHE_DIR,
     TASK_CROPS_DIR, POINTS_MARKER_RE,
@@ -23,6 +25,21 @@ from app.utils.safe_http import (
     MAX_PDF_BYTES, MAX_PDF_PAGES, MAX_PDF_DOWNLOAD_SECONDS,
     open_pdf_url, validate_pdf_url,
 )
+from app.utils.pdfium_runtime import pdfium_lock
+
+
+_source_cache_lock_guard = Lock()
+_source_cache_locks = {}
+
+
+def _source_cache_lock(cache_path: Path):
+    key = str(cache_path.resolve())
+    with _source_cache_lock_guard:
+        lock = _source_cache_locks.get(key)
+        if lock is None:
+            lock = Lock()
+            _source_cache_locks[key] = lock
+        return lock
 
 
 def ensure_cache_dirs():
@@ -68,37 +85,37 @@ def ensure_local_pdf_path(source_url: str) -> Path:
         raise RuntimeError("source_pdf_url is empty")
     approved_url = validate_pdf_url(normalized_url)
     cache_path = source_pdf_cache_path(approved_url)
-    if cache_path.exists() and 0 < cache_path.stat().st_size <= MAX_PDF_BYTES:
-        return cache_path
-    if cache_path.exists():
-        cache_path.unlink(missing_ok=True)
+    with _source_cache_lock(cache_path):
+        if cache_path.exists() and 0 < cache_path.stat().st_size <= MAX_PDF_BYTES:
+            return cache_path
+        if cache_path.exists():
+            cache_path.unlink(missing_ok=True)
 
-    tmp_path = cache_path.with_suffix(".tmp")
-    tmp_path.unlink(missing_ok=True)
-    total = 0
-    deadline = time.monotonic() + MAX_PDF_DOWNLOAD_SECONDS
-    try:
-        with open_pdf_url(approved_url, timeout=10) as response, open(tmp_path, "wb") as out_file:
-            content_length = response.headers.get("Content-Length")
-            if content_length and int(content_length) > MAX_PDF_BYTES:
-                raise RuntimeError("PDF exceeds the download size limit")
-            while True:
-                if time.monotonic() >= deadline:
-                    raise RuntimeError("PDF download exceeded the time limit")
-                chunk = response.read(min(64 * 1024, MAX_PDF_BYTES + 1 - total))
-                if not chunk:
-                    break
-                total += len(chunk)
-                if total > MAX_PDF_BYTES:
+        tmp_path = cache_path.with_name(f"{cache_path.name}.{uuid4().hex}.tmp")
+        total = 0
+        deadline = time.monotonic() + MAX_PDF_DOWNLOAD_SECONDS
+        try:
+            with open_pdf_url(approved_url, timeout=10) as response, open(tmp_path, "xb") as out_file:
+                content_length = response.headers.get("Content-Length")
+                if content_length and int(content_length) > MAX_PDF_BYTES:
                     raise RuntimeError("PDF exceeds the download size limit")
-                out_file.write(chunk)
-        if total <= 0:
-            raise RuntimeError("downloaded PDF is empty")
-        tmp_path.replace(cache_path)
-        return cache_path
-    except Exception:
-        tmp_path.unlink(missing_ok=True)
-        raise
+                while True:
+                    if time.monotonic() >= deadline:
+                        raise RuntimeError("PDF download exceeded the time limit")
+                    chunk = response.read(min(64 * 1024, MAX_PDF_BYTES + 1 - total))
+                    if not chunk:
+                        break
+                    total += len(chunk)
+                    if total > MAX_PDF_BYTES:
+                        raise RuntimeError("PDF exceeds the download size limit")
+                    out_file.write(chunk)
+            if total <= 0:
+                raise RuntimeError("downloaded PDF is empty")
+            tmp_path.replace(cache_path)
+            return cache_path
+        except Exception:
+            tmp_path.unlink(missing_ok=True)
+            raise
 
 
 def url_exists(url: str) -> bool:
@@ -232,54 +249,55 @@ def find_fragment_for_chunk_in_pdf(local_pdf_path: Path, chunk_text: str, page_s
     queries = build_chunk_search_queries(chunk_text)
     if not queries:
         return []
-    try:
-        pdf_doc = pdfium.PdfDocument(str(local_pdf_path))
-    except Exception:
-        return []
-    try:
-        total_pages = len(pdf_doc)
-        if total_pages <= 0:
+    with pdfium_lock:
+        try:
+            pdf_doc = pdfium.PdfDocument(str(local_pdf_path))
+        except Exception:
             return []
-        start = max(1, _safe_int(page_start, 1) or 1)
-        end = min(total_pages, max(start, _safe_int(page_end, total_pages) or total_pages))
-        best = None
-        for page_num in range(start, end + 1):
-            page = pdf_doc[page_num - 1]
-            text_page = page.get_textpage()
-            try:
-                page_width, page_height = page.get_size()
-                for query in queries:
-                    searcher = text_page.search(query, match_case=False)
-                    try:
-                        hit = searcher.get_next()
-                        while hit:
-                            start_idx, count = hit
-                            bbox = bbox_ratio_from_char_range(text_page, int(start_idx), int(count), page_width, page_height)
-                            if bbox:
-                                l, t, r, b = bbox
-                                score = (len(query), (r - l) * (b - t))
-                                if best is None or score > best["score"]:
-                                    best = {"score": score, "page": page_num, "x": l, "y": t, "width": r - l, "height": b - t}
+        try:
+            total_pages = len(pdf_doc)
+            if total_pages <= 0:
+                return []
+            start = max(1, _safe_int(page_start, 1) or 1)
+            end = min(total_pages, max(start, _safe_int(page_end, total_pages) or total_pages))
+            best = None
+            for page_num in range(start, end + 1):
+                page = pdf_doc[page_num - 1]
+                text_page = page.get_textpage()
+                try:
+                    page_width, page_height = page.get_size()
+                    for query in queries:
+                        searcher = text_page.search(query, match_case=False)
+                        try:
                             hit = searcher.get_next()
-                    finally:
-                        searcher.close()
-            finally:
-                text_page.close()
-                page.close()
-        if not best:
-            return []
-        chunk_len = len(_normalize_text_value(chunk_text or ""))
-        l = max(0.0, best["x"] - 0.01)
-        r = min(1.0, best["x"] + best["width"] + 0.01)
-        t = max(0.0, best["y"] - 0.008)
-        growth = min(0.24, 0.03 + (chunk_len / 2200.0))
-        b = min(1.0, best["y"] + best["height"] + growth)
-        if b <= t:
-            t = best["y"]
-            b = min(1.0, best["y"] + max(best["height"], 0.04))
-        return [{"page": best["page"], "x": l, "y": t, "width": r - l, "height": b - t, "unit": "ratio", "order_index": 1}]
-    finally:
-        pdf_doc.close()
+                            while hit:
+                                start_idx, count = hit
+                                bbox = bbox_ratio_from_char_range(text_page, int(start_idx), int(count), page_width, page_height)
+                                if bbox:
+                                    l, t, r, b = bbox
+                                    score = (len(query), (r - l) * (b - t))
+                                    if best is None or score > best["score"]:
+                                        best = {"score": score, "page": page_num, "x": l, "y": t, "width": r - l, "height": b - t}
+                                hit = searcher.get_next()
+                        finally:
+                            searcher.close()
+                finally:
+                    text_page.close()
+                    page.close()
+            if not best:
+                return []
+            chunk_len = len(_normalize_text_value(chunk_text or ""))
+            l = max(0.0, best["x"] - 0.01)
+            r = min(1.0, best["x"] + best["width"] + 0.01)
+            t = max(0.0, best["y"] - 0.008)
+            growth = min(0.24, 0.03 + (chunk_len / 2200.0))
+            b = min(1.0, best["y"] + best["height"] + growth)
+            if b <= t:
+                t = best["y"]
+                b = min(1.0, best["y"] + max(best["height"], 0.04))
+            return [{"page": best["page"], "x": l, "y": t, "width": r - l, "height": b - t, "unit": "ratio", "order_index": 1}]
+        finally:
+            pdf_doc.close()
 
 
 def build_fallback_fragments(task, pdf_doc):
@@ -368,67 +386,68 @@ def render_task_fragments(task):
         import pypdfium2 as pdfium
     except Exception:
         return {"available": False, "reason": "pdf_renderer_not_installed", "images": [], "source_pdf_url": source_url}
-    try:
-        pdf_doc = pdfium.PdfDocument(str(local_pdf_path))
-    except Exception:
-        return {"available": False, "reason": "pdf_open_failed", "error": "PDF could not be opened", "images": [], "source_pdf_url": source_url}
-    try:
-        if len(pdf_doc) > MAX_PDF_PAGES:
-            return {"available": False, "reason": "page_limit_exceeded", "images": [], "source_pdf_url": source_url}
-        source_fragments = _source_fragments_from_storage(task.source_fragments)
-        fragments = _normalize_source_fragments(source_fragments)
-        fragments, refined = _refine_stored_fragments(task, local_pdf_path, fragments, pdf_doc)
-        visual_mode = "bbox" if fragments and (refined or source_fragments) else "page_fallback"
-        if not fragments:
-            fragments = build_fallback_fragments(task, pdf_doc)
-        if not fragments:
-            return {"available": False, "reason": "no_fragments", "images": [], "source_pdf_url": source_url}
+    with pdfium_lock:
+        try:
+            pdf_doc = pdfium.PdfDocument(str(local_pdf_path))
+        except Exception:
+            return {"available": False, "reason": "pdf_open_failed", "error": "PDF could not be opened", "images": [], "source_pdf_url": source_url}
+        try:
+            if len(pdf_doc) > MAX_PDF_PAGES:
+                return {"available": False, "reason": "page_limit_exceeded", "images": [], "source_pdf_url": source_url}
+            source_fragments = _source_fragments_from_storage(task.source_fragments)
+            fragments = _normalize_source_fragments(source_fragments)
+            fragments, refined = _refine_stored_fragments(task, local_pdf_path, fragments, pdf_doc)
+            visual_mode = "bbox" if fragments and (refined or source_fragments) else "page_fallback"
+            if not fragments:
+                fragments = build_fallback_fragments(task, pdf_doc)
+            if not fragments:
+                return {"available": False, "reason": "no_fragments", "images": [], "source_pdf_url": source_url}
 
-        ensure_cache_dirs()
-        images = []
-        stats = local_pdf_path.stat()
-        pdf_fingerprint = f"{local_pdf_path.resolve()}:{stats.st_mtime_ns}:{stats.st_size}"
+            ensure_cache_dirs()
+            images = []
+            stats = local_pdf_path.stat()
+            pdf_fingerprint = f"{local_pdf_path.resolve()}:{stats.st_mtime_ns}:{stats.st_size}"
 
-        for fragment in sorted(fragments, key=lambda f: f.get("order_index", 0))[:20]:
-            page_num = _safe_int(fragment.get("page"), None)
-            if page_num is None or page_num < 1 or page_num > len(pdf_doc):
-                continue
-            page = pdf_doc[page_num - 1]
-            page_width, page_height = page.get_size()
-            bbox = normalize_visual_fragment(fragment, page_width, page_height)
-            if not bbox:
-                page.close()
-                continue
-            left, top, right, bottom = bbox
-            if page_width <= 0 or page_height <= 0 or page_width > 100_000 or page_height > 100_000:
-                page.close()
-                continue
-            render_scale = min(
-                2.2,
-                5000 / page_width,
-                5000 / page_height,
-                math.sqrt(20_000_000 / (page_width * page_height)),
-            )
-            cache_key = hashlib.sha256(
-                json.dumps({"task_id": task.id, "pdf": pdf_fingerprint, "page": page_num,
-                            "bbox": [left, top, right, bottom], "scale": render_scale}, sort_keys=True).encode("utf-8")
-            ).hexdigest()
-            cache_path = PDF_FRAGMENT_CACHE_DIR / f"{cache_key}.webp"
-            if not cache_path.exists():
-                pil_img = page.render(scale=render_scale).to_pil()
-                page.close()
-                img_w, img_h = pil_img.size
-                cropped = pil_img.crop((int(round(left * img_w)), int(round(top * img_h)),
-                                        int(round(right * img_w)), int(round(bottom * img_h))))
-                cropped.save(cache_path, format="WEBP", quality=90, method=6)
-            else:
-                page.close()
-            images.append({"url": f"/tasks/fragments/{cache_path.name}", "page": page_num,
-                           "order_index": _safe_int(fragment.get("order_index"), len(images) + 1)})
-        return {"available": bool(images), "reason": "ok" if images else "render_empty",
-                "visual_mode": visual_mode, "source_pdf_url": source_url, "images": images}
-    finally:
-        pdf_doc.close()
+            for fragment in sorted(fragments, key=lambda f: f.get("order_index", 0))[:20]:
+                page_num = _safe_int(fragment.get("page"), None)
+                if page_num is None or page_num < 1 or page_num > len(pdf_doc):
+                    continue
+                page = pdf_doc[page_num - 1]
+                page_width, page_height = page.get_size()
+                bbox = normalize_visual_fragment(fragment, page_width, page_height)
+                if not bbox:
+                    page.close()
+                    continue
+                left, top, right, bottom = bbox
+                if page_width <= 0 or page_height <= 0 or page_width > 100_000 or page_height > 100_000:
+                    page.close()
+                    continue
+                render_scale = min(
+                    2.2,
+                    5000 / page_width,
+                    5000 / page_height,
+                    math.sqrt(20_000_000 / (page_width * page_height)),
+                )
+                cache_key = hashlib.sha256(
+                    json.dumps({"task_id": task.id, "pdf": pdf_fingerprint, "page": page_num,
+                                "bbox": [left, top, right, bottom], "scale": render_scale}, sort_keys=True).encode("utf-8")
+                ).hexdigest()
+                cache_path = PDF_FRAGMENT_CACHE_DIR / f"{cache_key}.webp"
+                if not cache_path.exists():
+                    pil_img = page.render(scale=render_scale).to_pil()
+                    page.close()
+                    img_w, img_h = pil_img.size
+                    cropped = pil_img.crop((int(round(left * img_w)), int(round(top * img_h)),
+                                            int(round(right * img_w)), int(round(bottom * img_h))))
+                    cropped.save(cache_path, format="WEBP", quality=90, method=6)
+                else:
+                    page.close()
+                images.append({"url": f"/tasks/fragments/{cache_path.name}", "page": page_num,
+                               "order_index": _safe_int(fragment.get("order_index"), len(images) + 1)})
+            return {"available": bool(images), "reason": "ok" if images else "render_empty",
+                    "visual_mode": visual_mode, "source_pdf_url": source_url, "images": images}
+        finally:
+            pdf_doc.close()
 
 
 def split_statement_by_points_markers(statement: str) -> list:

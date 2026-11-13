@@ -1,6 +1,7 @@
 import random
 import os
 import time
+import logging
 from datetime import datetime
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -14,6 +15,7 @@ from app.task_helpers import build_task_title as _build_task_title, resolve_task
 from app.utils.answer import check_user_answer_against_reference as _check_user_answer_against_reference
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.websocket("/ws/pvp/{user_id}")
@@ -180,7 +182,12 @@ async def pvp_websocket(websocket: WebSocket, user_id: int, db: Session = Depend
     except WebSocketDisconnect:
         if connected:
             match_manager.disconnect(user_id, websocket)
-    except Exception as e:
+    except Exception:
+        logger.exception("PvP WebSocket failed for user_id=%s", user_id)
+        try:
+            db.rollback()
+        except Exception:
+            logger.exception("Failed to roll back PvP database session for user_id=%s", user_id)
         try:
             await websocket.send_json({"error": "Внутренняя ошибка"})
         except Exception:
