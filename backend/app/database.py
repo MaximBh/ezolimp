@@ -1,11 +1,10 @@
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Date, UniqueConstraint, Index, event
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Date, UniqueConstraint, Index, event, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool
 from datetime import datetime
 import bcrypt
-
-DATABASE_URL = "sqlite:///./olimpiada.db"
+from app.config import DATABASE_URL
 
 engine = create_engine(
     DATABASE_URL,
@@ -45,6 +44,7 @@ class User(Base):
     rating = Column(Integer, default=1000)
     is_admin = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
+    session_version = Column(Integer, nullable=False, default=0, server_default="0")
     created_at = Column(DateTime, default=datetime.utcnow)
     last_login = Column(DateTime)
     avatar_url = Column(String(500))
@@ -53,6 +53,38 @@ class User(Base):
     telegram = Column(String(100))
     vk = Column(String(100))
     github = Column(String(100))
+
+
+class LoginAttempt(Base):
+    __tablename__ = "login_attempts"
+    __table_args__ = (Index("ix_login_attempts_username_time", "username_hash", "attempted_at"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    username_hash = Column(String(64), nullable=False)
+    attempted_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+
+
+class AuthRateAttempt(Base):
+    __tablename__ = "auth_rate_attempts"
+    __table_args__ = (Index("ix_auth_rate_action_ip_time", "action", "ip_hash", "attempted_at"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    action = Column(String(16), nullable=False)
+    ip_hash = Column(String(64), nullable=False)
+    attempted_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+
+class AdminAuditLog(Base):
+    __tablename__ = "admin_audit_logs"
+    __table_args__ = (Index("ix_admin_audit_actor_time", "actor_user_id", "created_at"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    actor_user_id = Column(Integer, nullable=False)
+    action = Column(String(64), nullable=False)
+    resource_type = Column(String(32), nullable=False)
+    resource_id = Column(Integer)
+    details = Column(Text)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
 
 class Task(Base):
@@ -174,6 +206,17 @@ def verify_password(password: str, hashed: str) -> bool:
 
 def create_tables():
     Base.metadata.create_all(bind=engine)
+
+
+def ensure_auth_schema_columns():
+    with engine.begin() as connection:
+        columns = {
+            row[1] for row in connection.execute(text("PRAGMA table_info(users)")).fetchall()
+        }
+        if "session_version" not in columns:
+            connection.execute(text(
+                "ALTER TABLE users ADD COLUMN session_version INTEGER NOT NULL DEFAULT 0"
+            ))
 
 
 def get_db():

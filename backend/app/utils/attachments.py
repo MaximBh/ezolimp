@@ -1,6 +1,7 @@
 import json
 from app.config import _safe_int
 from app.utils.text import normalize_text_value as _normalize_text_value, first_sentence as _first_sentence
+from app.utils.safe_http import validate_pdf_url
 
 
 def _build_default_attachment(subject: str, grade, topic: str, statement: str):
@@ -36,6 +37,8 @@ def normalize_attachments(raw, subject: str, grade, topic: str, statement: str):
         for item in value:
             if not isinstance(item, dict):
                 continue
+            if len(normalized) >= 100:
+                break
             item_type = str(item.get("type") or "note").strip().lower()
             title = str(item.get("title") or "").strip()
             if item_type == "table":
@@ -82,6 +85,7 @@ def ensure_source_pdf_attachment(attachments, source_pdf_url: str):
     source_url = str(source_pdf_url or "").strip()
     if not source_url:
         return attachments
+    source_url = validate_pdf_url(source_url, resolve=False)
     prepared = list(attachments or [])
     for item in prepared:
         if isinstance(item, dict) and str(item.get("type") or "").strip().lower() == "pdf":
@@ -118,6 +122,8 @@ def normalize_source_fragments(raw):
         for item in value:
             if not isinstance(item, dict):
                 continue
+            if len(normalized) >= 100:
+                break
             page = _safe_int(item.get("page"), None)
             width = _safe_float(item.get("width"))
             height = _safe_float(item.get("height"))

@@ -4,6 +4,7 @@ import difflib
 import re
 from pathlib import Path
 from typing import Any
+from app.utils.safe_http import MAX_PDF_PAGES
 
 try:
     import pypdfium2 as pdfium
@@ -64,6 +65,20 @@ _CITY_DATE_RE = re.compile(
     re.IGNORECASE,
 )
 _PAGE_NUMBER_RE = re.compile(r"^\s*\d{1,4}\s*$")
+_PAGE_FOOTER_RE = re.compile(r"^\s*(?:страница|page)\s+\d+\s+(?:из|of)\s+\d+\s*$", re.IGNORECASE)
+_PAGE_ARTIFACT_RE = re.compile(
+    r"(?:\b(?:страница|page)\s+\d{1,4}\s+(?:из|of)\s+\d{1,4}\b|"
+    r"\bпервая\s+группа\s+регионов\b|"
+    r"\bобразовательный\s+центр\s+[«\"']?сириус[»\"']?,?\s+\d{1,2}\s+"
+    r"(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\s+20\d{2}\b)",
+    re.IGNORECASE,
+)
+_SIRIUS_HEADER_RE = re.compile(
+    r"^\s*образовательный\s+центр\s+[«\"']?сириус[»\"']?,?\s+\d{1,2}\s+"
+    r"(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\s+20\d{2}\s*$",
+    re.IGNORECASE,
+)
+_SIRIUS_GROUP_HEADER_RE = re.compile(r"^\s*первая\s+группа\s+регионов\s*$", re.IGNORECASE)
 _TASK_ONLY_HEADER_RE = re.compile(r"^\s*(?:задача|задание|task)\s+\d{1,3}\s*[.:]?\s*$", re.IGNORECASE)
 _SCORING_HEADER_RE = re.compile(
     r"^\s*(?:всего\s+\d+\s+балл(?:а|ов)?|максимальн(?:ый|ое)\s+(?:балл|количество баллов))\b",
@@ -79,8 +94,27 @@ _PYTHON_CONTROL_RE = re.compile(
     re.IGNORECASE,
 )
 _CPP_CONTROL_RE = re.compile(
-    r"^(?:#include|using\b|int\b|long\b|auto\b|bool\b|void\b|vector\b|multiset\b|cout\b|cin\b)",
+    r"^(?:#include|using\b|int\b|long\b|unsigned\b|signed\b|auto\b|bool\b|void\b|char\b|short\b|double\b|float\b|size_t\b|vector\b|multiset\b|cout\b|cin\b)",
     re.IGNORECASE,
+)
+_CPP_FOR_RE = re.compile(r"^for\s*\([^;]*;[^;]*;", re.IGNORECASE)
+_CPP_CONTINUATION_RE = re.compile(r"^(?:\+|\*|/|%|&&|\|\||<<|>>|\?)\s*(?:[A-Za-z_(0-9]|$)")
+_CPP_BROKEN_INCREMENT_RE = re.compile(r"^(?:[+\-−]\s*[+\-−])\s*[A-Za-z_]\s*(?:[A-Za-z_0-9]\s*)*;?$")
+_SPACED_CPP_LINE_RE = re.compile(r"(?:\b[A-Za-z]\s+){2,}[A-Za-z]\b.*[<>{};=()]|[<>{};=()].*(?:\b[A-Za-z]\s+){2,}[A-Za-z]\b")
+_SPACED_CPP_TOKENS = (
+    "upper_bound", "push_back", "multiset", "namespace", "include", "vector", "rbegin", "rend",
+    "begin", "erase", "insert", "sort", "using", "long", "size_t", "auto", "bool", "int",
+    "cin", "cout", "endl", "for", "if", "else", "ans", "possible", "prev", "it", "std",
+)
+_SPACED_CPP_TOKEN_RES = tuple(
+    (
+        token,
+        re.compile(
+            r"(?<![A-Za-z0-9_])" + r"\s*".join(re.escape(char) for char in token) + r"(?![A-Za-z0-9_])",
+            re.IGNORECASE,
+        ),
+    )
+    for token in _SPACED_CPP_TOKENS
 )
 _PYTHON_OPERATORS_RE = re.compile(r"(?:==|!=|<=|>=|\+=|-=|\*=|//=|\*\*=|(?<![<>=!])=(?!=)|[()\[\]{}.:])")
 
@@ -113,11 +147,21 @@ def _statement_strength(value: str) -> int:
     return len(_normalize_text(value or ""))
 
 
+def _strip_page_artifacts(value: str) -> str:
+    text = str(value or "").strip()
+    if len(text) > 280 or not _PAGE_ARTIFACT_RE.search(text):
+        return text
+    text = _PAGE_ARTIFACT_RE.sub(" ", text)
+    return re.sub(r"\s{2,}", " ", text).strip(" \t,.:;–—-")
+
+
 def _is_noise_line(line: str) -> bool:
-    clean = str(line or "").strip()
+    clean = _strip_page_artifacts(str(line or "").strip())
     if not clean:
         return True
     if _PAGE_NUMBER_RE.match(clean):
+        return True
+    if _PAGE_FOOTER_RE.match(clean) or _SIRIUS_HEADER_RE.match(clean) or _SIRIUS_GROUP_HEADER_RE.match(clean):
         return True
     if _SCORING_HEADER_RE.match(clean) or _SCORING_NOTE_RE.match(clean):
         return True
@@ -164,13 +208,29 @@ def _looks_like_python_code(line: str) -> bool:
     )
 
 
+def _normalize_spaced_cpp_line(line: str) -> str:
+    value = str(line or "").replace("−", "-").replace("∗", "*")
+    for token, token_re in _SPACED_CPP_TOKEN_RES:
+        value = token_re.sub(token, value)
+    value = re.sub(r"(?<!\w)([+\-])\s+\1", r"\1\1", value)
+    value = re.sub(r"\s*([.()\[\]])\s*", r"\1", value)
+    value = re.sub(r"\s*,\s*", ", ", value)
+    return value
+
+
 def _looks_like_cpp_code(line: str) -> bool:
-    value = str(line or "").strip()
+    value = _normalize_spaced_cpp_line(str(line or "").strip()).strip()
     if not value or len(value) > 320:
         return False
     if value in {"{", "}"} or value.startswith(("++", "--")):
         return True
-    if _CPP_CONTROL_RE.match(value) or re.match(r"^(?:for|if|while|else|return|break)\b", value):
+    if _CPP_BROKEN_INCREMENT_RE.match(value):
+        return True
+    if _CPP_CONTROL_RE.match(value) or _CPP_FOR_RE.match(value) or re.match(r"^(?:if|while|else|return|break)\b", value):
+        return True
+    if _CPP_CONTINUATION_RE.match(value):
+        return True
+    if re.match(r"^[A-Za-z_]\w*(?:\s*(?:\[[^\]]*\]|\.[A-Za-z_]\w*|->[A-Za-z_]\w*))*\s*(?:=|\+=|-=|\*=|/=|\+\+|--)", value):
         return True
     if re.search(r"[А-Яа-яЁё]", value):
         return False
@@ -181,9 +241,19 @@ def _looks_like_source_code(line: str) -> bool:
     return _looks_like_python_code(line) or _looks_like_cpp_code(line)
 
 
+def _looks_like_pdf_code_candidate(line: str) -> bool:
+    value = _normalize_spaced_cpp_line(str(line or "").strip())
+    if _looks_like_source_code(value):
+        return True
+    if not value or len(value) > 320 or re.search(r"[А-Яа-яЁё]", value):
+        return False
+    punctuation = re.findall(r"[=;{}<>\[\]()]", value)
+    return len(punctuation) >= 2 or bool(re.search(r"(?:<<|>>)", value))
+
+
 def _repair_spaced_pdf_code_line(text_page, page_text: str, start_index: int, line: str, page_width: float) -> str:
     """Join PDFium's synthetic spaces between glyphs in monospaced code text."""
-    if not _looks_like_source_code(line):
+    if not (_looks_like_pdf_code_candidate(line) or _SPACED_CPP_LINE_RE.search(line)):
         return line
     chars = list(line)
     threshold = min(5.2, max(3.2, page_width * 0.009))
@@ -211,7 +281,8 @@ def _repair_spaced_pdf_code_line(text_page, page_text: str, start_index: int, li
     repaired = re.sub(r"\s*([.()\[\]])\s*", r"\1", repaired)
     repaired = re.sub(r"\s*,\s*", ", ", repaired)
     repaired = re.sub(r"([)\]\}])(and|or|in|is|not)\b", r"\1 \2", repaired)
-    return repaired.replace("∗", "*").replace("−", "-").replace("×", "*")
+    repaired = repaired.replace("×", "*")
+    return _normalize_spaced_cpp_line(repaired)
 
 
 def _space_python_operators(line: str) -> str:
@@ -228,10 +299,10 @@ def _solution_with_code_blocks(lines: list[dict[str, Any] | str]) -> str:
     records = []
     for item in lines:
         if isinstance(item, dict):
-            text = str(item.get("text") or "").strip()
+            text = _strip_page_artifacts(str(item.get("text") or "").strip())
             bbox = item.get("bbox")
         else:
-            text = str(item or "").strip()
+            text = _strip_page_artifacts(str(item or "").strip())
             bbox = None
         records.append({"text": text, "bbox": bbox})
 
@@ -256,7 +327,12 @@ def _solution_with_code_blocks(lines: list[dict[str, Any] | str]) -> str:
     code_spans = []
     for start, end in spans:
         code_lines = [item for item in records[start:end] if item["text"]]
-        has_control_flow = any(_PYTHON_CONTROL_RE.match(item["text"]) or re.match(r"^(?:for|if|while|else|return|break)\b", item["text"]) for item in code_lines)
+        has_control_flow = any(
+            _PYTHON_CONTROL_RE.match(item["text"])
+            or _CPP_FOR_RE.match(_normalize_spaced_cpp_line(item["text"]))
+            or re.match(r"^(?:for|if|while|else|return|break)\b", item["text"])
+            for item in code_lines
+        )
         if len(code_lines) >= 3 and (has_control_flow or len(code_lines) >= 6):
             code_spans.append((start, end))
 
@@ -264,7 +340,9 @@ def _solution_with_code_blocks(lines: list[dict[str, Any] | str]) -> str:
     for start, end in code_spans:
         code_records = [item for item in records[start:end] if item["text"]]
         language = "cpp" if any(
-            _CPP_CONTROL_RE.match(item["text"]) or re.match(r"^#include", item["text"])
+            _CPP_CONTROL_RE.match(_normalize_spaced_cpp_line(item["text"]))
+            or _CPP_FOR_RE.match(_normalize_spaced_cpp_line(item["text"]))
+            or re.match(r"^(?:std::|switch\s*\(|cout\b|cin\b)", _normalize_spaced_cpp_line(item["text"]))
             for item in code_records
         ) else "python"
         x_positions = sorted({
@@ -272,7 +350,7 @@ def _solution_with_code_blocks(lines: list[dict[str, Any] | str]) -> str:
             if isinstance(item.get("bbox"), (list, tuple)) and len(item["bbox"]) >= 1
         })
         deltas = [right - left for left, right in zip(x_positions, x_positions[1:]) if right - left >= 0.008]
-        indent_step = min(deltas) if deltas else None
+        indent_step = sorted(deltas)[len(deltas) // 2] if deltas else None
         base_x = min(x_positions) if x_positions else None
         formatted = []
         for item in records[start:end]:
@@ -283,7 +361,7 @@ def _solution_with_code_blocks(lines: list[dict[str, Any] | str]) -> str:
             bbox = item.get("bbox")
             if indent_step and base_x is not None and isinstance(bbox, (list, tuple)) and len(bbox) >= 1:
                 indent = max(0, round((float(bbox[0]) - base_x) / indent_step)) * 4
-            code_line = item["text"] if language == "cpp" else _space_python_operators(item["text"])
+            code_line = _normalize_spaced_cpp_line(item["text"]) if language == "cpp" else _space_python_operators(item["text"])
             if language == "cpp":
                 code_line = re.sub(r"^(#include)\s*<\s*([^>]+?)\s*>", r"\1<\2>", code_line)
                 code_line = re.sub(r"\b(vector|multiset)\s*<\s*([^>]+?)\s*>", r"\1<\2>", code_line)
@@ -730,6 +808,8 @@ def _extract_pages(pdf_path: Path) -> list[dict[str, Any]]:
     document = pdfium.PdfDocument(str(pdf_path))
     pages: list[dict[str, Any]] = []
     try:
+        if len(document) > MAX_PDF_PAGES:
+            raise RuntimeError("PDF exceeds the page limit")
         for page_index in range(len(document)):
             page = document[page_index]
             text_page = page.get_textpage()
@@ -789,7 +869,7 @@ def _detect_entries(pages: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 line_bbox = None
                 question_start = False
 
-            clean = _INVALID_PDF_TEXT_RE.sub("", str(raw_line or "")).strip()
+            clean = _strip_page_artifacts(_INVALID_PDF_TEXT_RE.sub("", str(raw_line or "")).strip())
             if _TASK_ONLY_HEADER_RE.match(clean):
                 next_clean = ""
                 for next_item in line_records[line_index + 1:line_index + 3]:

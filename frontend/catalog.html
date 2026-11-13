@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EzOlimp - Каталог задач</title>
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="stylesheet" href="shared.css">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared.css">
 <script>var d=document.documentElement;d.setAttribute("data-theme",localStorage.getItem("ez-theme")||"light");d.classList.add("no-transition");window.addEventListener("load",function(){d.classList.remove("no-transition")})</script>
 <style>
 .catalog-shell {
@@ -426,10 +426,10 @@
 </main>
 </div>
 
-<script src="layout.js"></script>
-<script src="shared.js"></script>
+<script src="/layout.js"></script>
+<script src="/shared.js"></script>
 <script>
-renderNav('catalog.html');
+renderNav('/catalog');
 renderFooter();
 
 const diffLabels = { easy:'Легкая', medium:'Средняя', hard:'Сложная', other:'-' };
@@ -713,7 +713,7 @@ document.getElementById('clearFilters').addEventListener('click', () => {
 
 document.getElementById('tasksList').addEventListener('click', event => {
   const card = event.target.closest('.task-item');
-  if (card?.dataset.taskId) window.location.href = `training.html?task=${card.dataset.taskId}`;
+  if (card?.dataset.taskId) window.location.href = `/training/${card.dataset.taskId}`;
 });
 
 document.getElementById('tasksList').addEventListener('keydown', event => {
@@ -721,7 +721,7 @@ document.getElementById('tasksList').addEventListener('keydown', event => {
   const card = event.target.closest('.task-item');
   if (!card?.dataset.taskId) return;
   event.preventDefault();
-  window.location.href = `training.html?task=${card.dataset.taskId}`;
+  window.location.href = `/training/${card.dataset.taskId}`;
 });
 
 renderCascade();

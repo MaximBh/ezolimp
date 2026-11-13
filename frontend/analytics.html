@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EzOlimp — Аналитика</title>
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="stylesheet" href="shared.css">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared.css">
 <script>var d=document.documentElement;d.setAttribute("data-theme",localStorage.getItem("ez-theme")||"light");d.classList.add("no-transition");window.addEventListener("load",function(){d.classList.remove("no-transition")})</script>
 <style>
 .analytics-wrap { max-width:1100px; margin:0 auto; padding:96px 40px 80px; }
@@ -79,14 +79,19 @@
 </div>
 
 
-<script src="layout.js"></script>
-<script src="shared.js"></script>
+<script src="/layout.js"></script>
+<script src="/shared.js"></script>
 <script>
-renderNav('analytics.html');
+renderNav('/analytics');
 renderFooter();
 
-const token = localStorage.getItem('token');
-if (!token) { location.href='main.html'; }
+function escHtml(value) {
+  return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function escAttr(value) { return escHtml(value); }
+
+const token = (localStorage.getItem('user') ? 'cookie' : null);
+if (!token) { location.href='/'; }
 
 const DEMO_ANALYTICS = {
   rating: 1240,
@@ -97,7 +102,7 @@ const DEMO_ANALYTICS = {
 };
 
 async function loadAnalytics() {
-  const token = localStorage.getItem('token');
+  const token = (localStorage.getItem('user') ? 'cookie' : null);
   if (!token) return;
 
   try {
@@ -127,9 +132,9 @@ async function loadAnalytics() {
         .sort((a,b) => (b[1].correct||0) - (a[1].correct||0))
         .map(([s, data]) => `
           <div class="subject-row">
-            <div class="subject-name">${s}</div>
-            <div class="subject-bar-wrap">
-              <div class="subject-bar" style="width:${Math.round((data.correct||0)/max*100)}%"></div>
+            <div class="subject-name">${escHtml(s)}</div>
+          <div class="subject-bar-wrap">
+              <div class="subject-bar" style="width:${Math.max(0, Math.min(100, Math.round((Number(data.correct)||0)/max*100)))}%"></div>
             </div>
             <div class="subject-count">${data.correct||0}</div>
           </div>`).join('');
@@ -143,8 +148,8 @@ async function loadAnalytics() {
     if (Object.keys(byDiff).length) {
       document.getElementById('diffStats').innerHTML = Object.entries(byDiff).map(([d, data]) => `
         <div class="diff-row">
-          <span>${diffLabels[d]||d}</span>
-          <span style="font-weight:700;color:var(--accent)">${data.correct||0}</span>
+          <span>${escHtml(diffLabels[d]||d)}</span>
+          <span style="font-weight:700;color:var(--accent)">${escHtml(data.correct||0)}</span>
         </div>`).join('');
     } else {
       document.getElementById('diffStats').innerHTML = '<div style="color:var(--text3);font-size:14px">Нет данных</div>';
@@ -156,7 +161,7 @@ async function loadAnalytics() {
       const counts = byDate.map(d => d[1]);
       const maxD = Math.max(...counts);
       document.getElementById('ratingHistory').innerHTML = byDate.map(d => `
-        <div class="rating-bar" style="height:${Math.round(d[1]/maxD*72+8)}px" title="${d[0]}: ${d[1]} задач"></div>
+        <div class="rating-bar" style="height:${Math.max(8, Math.min(80, Math.round((Number(d[1])||0)/maxD*72+8)))}px" title="${escAttr(d[0])}: ${escAttr(d[1])} задач"></div>
       `).join('');
     } else {
       document.getElementById('ratingHistory').innerHTML = '<div style="color:var(--text3);font-size:14px;align-self:center">Начните решать задачи для отслеживания прогресса</div>';

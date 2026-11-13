@@ -1,7 +1,39 @@
 /* shared.js — подключается на всех страницах */
 
-const API_URL = location.port === "3000" ? `http://${location.hostname}:8001` : "";
+const API_URL = location.protocol === 'http:' && location.port !== '8001' && ["localhost", "127.0.0.1"].includes(location.hostname)
+  ? `http://${location.hostname}:8001`
+  : "";
 const html = document.documentElement;
+
+// JWTs now live in an HttpOnly cookie. Remove any token left by older versions
+// before page scripts run; the cached user object is only a UI hint.
+localStorage.removeItem('token');
+const nativeFetch = window.fetch.bind(window);
+window.fetch = (input, init = {}) => {
+  let requestUrl;
+  try {
+    requestUrl = new URL(typeof input === 'string' || input instanceof URL ? input : input.url, location.href);
+  } catch {
+    return nativeFetch(input, init);
+  }
+  const apiOrigin = new URL(API_URL || location.href, location.href).origin;
+  if (requestUrl.origin !== location.origin && requestUrl.origin !== apiOrigin) {
+    return nativeFetch(input, init);
+  }
+  const headers = new Headers(init.headers || (input instanceof Request ? input.headers : undefined));
+  headers.delete('Authorization');
+  return nativeFetch(input, { ...init, headers, credentials: 'include' });
+};
+
+function safeAvatarSrc(value, fallback = 'https://via.placeholder.com/48') {
+  const candidate = String(value || '').trim();
+  if (/^data:image\/(?:png|jpeg|webp|gif|svg\+xml);base64,[A-Za-z0-9+/]+={0,2}$/i.test(candidate)) return candidate;
+  try {
+    const parsed = new URL(candidate);
+    if (parsed.protocol === 'https:' && !parsed.username && !parsed.password && (!parsed.port || parsed.port === '443')) return parsed.href;
+  } catch {}
+  return fallback;
+}
 
 /* ── ТЕМА ── */
 (function() {
@@ -71,15 +103,19 @@ document.addEventListener('DOMContentLoaded', () => {
   /* выход */
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = 'main.html';
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        await fetch(`${API_URL}/auth/logout`, { method: 'POST' });
+      } finally {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/';
+      }
     });
   }
 
   /* auth состояние */
-  const token = localStorage.getItem('token');
+  const token = (localStorage.getItem('user') ? 'cookie' : null);
   const loginBtn = document.getElementById('loginBtn');
   const avatarWrap = document.getElementById('navAvatarWrap');
 
@@ -100,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const u = await r.json();
       const img = document.getElementById('navAvatarImg');
-      if (img) img.src = u.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(u.username)}&backgroundColor=7048b8&textColor=ffffff`;
+      if (img) img.src = safeAvatarSrc(u.avatar_url, `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(u.username)}&backgroundColor=7048b8&textColor=ffffff`);
     } catch {
       const img = document.getElementById('navAvatarImg');
       if (img) img.src = `https://api.dicebear.com/7.x/initials/svg?seed=u&backgroundColor=7048b8&textColor=ffffff`;
@@ -184,6 +220,10 @@ function openAuthModal(mode = 'login') {
         showErr('Класс должен быть числом от 1 до 11');
         return null;
       }
+      if (password.length < 8 || new TextEncoder().encode(password).length > 72) {
+        showErr('Пароль должен содержать не менее 8 символов и не более 72 байт');
+        return null;
+      }
 
       return { username, full_name: fullName, email, school, grade, password };
     }
@@ -207,7 +247,6 @@ function openAuthModal(mode = 'login') {
             else if (typeof d.error === 'string') errMsg = d.error;
             showErr(errMsg); btn.disabled = false; btn.textContent = 'Войти'; return;
           }
-          localStorage.setItem('token', d.token);
           localStorage.setItem('user', JSON.stringify(d.user));
           overlay.remove();
           location.reload();
@@ -267,7 +306,7 @@ function openAuthModal(mode = 'login') {
 
   // Если в URL есть ?auth=1, открываем модалку входа
   if (new URLSearchParams(window.location.search).get('auth')) {
-    setTimeout(() => { if (!localStorage.getItem('token')) openAuthModal('login'); }, 500);
+    setTimeout(() => { if (!localStorage.getItem('user')) openAuthModal('login'); }, 500);
   }
 
   /* scroll-анимации */

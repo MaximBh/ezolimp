@@ -1,13 +1,15 @@
+import json
 import re
 from datetime import datetime, date
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 import app.cache as app_cache
 
-from app.database import get_db, User, Task, TaskView, Solution, UserStats
+from app.database import get_db, User, Task, TaskView, Solution, UserStats, AdminAuditLog
 from app.schemas import TaskCreate
 from app.auth_middleware import get_current_user, get_admin_user
+from app.rate_limits import limiter
 from app.config import (
     _safe_int, _normalize_subject, _normalize_difficulty, _time_limit_by_difficulty,
     _normalize_olympiad_name, _is_manual_answer, _extract_source_url,
@@ -193,7 +195,8 @@ def get_generation_jobs(current_user: User = Depends(get_current_user)):
 
 
 @router.get("/tasks/{task_id}/visual")
-def get_task_visual(task_id: int, enrich: bool = True, db: Session = Depends(get_db)):
+@limiter.limit("30/minute")
+def get_task_visual(task_id: int, request: Request, enrich: bool = True, db: Session = Depends(get_db)):
     try:
         task = db.query(Task).filter(Task.id == task_id).first()
         if not task:
@@ -214,18 +217,29 @@ def get_task_visual(task_id: int, enrich: bool = True, db: Session = Depends(get
 
 
 @router.put("/tasks/{task_id}")
-def update_task(task_id: int, title: str = None, problem_statement: str = None, answer: str = None, db: Session = Depends(get_db)):
+def update_task(task_id: int, title: str = None, problem_statement: str = None, answer: str = None,
+                current_user: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     try:
         task = db.query(Task).filter(Task.id == task_id).first()
         if not task:
             raise HTTPException(status_code=404, detail="Задача не найдена")
+        changed_fields = []
         if title:
             task.title = title
+            changed_fields.append("title")
         if problem_statement:
             task.problem_statement = problem_statement
+            changed_fields.append("problem_statement")
         if answer:
             task.answer = answer
+            changed_fields.append("answer")
+        if changed_fields:
+            db.add(AdminAuditLog(
+                actor_user_id=current_user.id, action="task.updated", resource_type="task",
+                resource_id=task.id, details=json.dumps(changed_fields),
+            ))
         db.commit()
+        app_cache.invalidate_prefix("tasks:")
         return {"message": "Задача обновлена"}
     except HTTPException:
         raise
@@ -239,6 +253,10 @@ def delete_task(task_id: int, current_user: User = Depends(get_admin_user), db: 
         task = db.query(Task).filter(Task.id == task_id).first()
         if not task:
             raise HTTPException(status_code=404, detail="Задача не найдена")
+        db.add(AdminAuditLog(
+            actor_user_id=current_user.id, action="task.deleted", resource_type="task",
+            resource_id=task.id, details="{}",
+        ))
         db.delete(task)
         db.commit()
         app_cache.invalidate_prefix("tasks:")
@@ -250,7 +268,7 @@ def delete_task(task_id: int, current_user: User = Depends(get_admin_user), db: 
 
 
 @router.post("/tasks")
-def create_task(task_data: TaskCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def create_task(task_data: TaskCreate, current_user: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     try:
         difficulty = _normalize_difficulty(task_data.difficulty)
         subject = _normalize_subject(task_data.subject)
@@ -294,6 +312,11 @@ def create_task(task_data: TaskCreate, current_user: User = Depends(get_current_
             created_by=current_user.id
         )
         db.add(task)
+        db.flush()
+        db.add(AdminAuditLog(
+            actor_user_id=current_user.id, action="task.created", resource_type="task",
+            resource_id=task.id, details="{}",
+        ))
         db.commit()
         app_cache.invalidate_prefix("tasks:")
         return {"message": "Задача создана", "id": task.id}
@@ -303,7 +326,8 @@ def create_task(task_data: TaskCreate, current_user: User = Depends(get_current_
 
 
 @router.get("/tasks/{task_id}")
-def get_task(task_id: int, enrich: bool = True, db: Session = Depends(get_db)):
+@limiter.limit("60/minute")
+def get_task(task_id: int, request: Request, enrich: bool = True, db: Session = Depends(get_db)):
     try:
         task = db.query(Task).filter(Task.id == task_id).first()
         if not task:
@@ -318,8 +342,8 @@ def get_task(task_id: int, enrich: bool = True, db: Session = Depends(get_db)):
             try:
                 _, enrich_status = _enrich_task_from_vsosh_pdfs(task, db, force=False)
                 db.refresh(task)
-            except Exception as exc:
-                enrich_status = f"error: {_normalize_text_value(exc)}"
+            except Exception:
+                enrich_status = "unavailable"
         full_statement = _normalize_text_value(getattr(task, "full_problem_statement", "") or task.problem_statement or "") or _strip_source_lines(task.problem_statement or "")
         return {
             "id": task.id,
@@ -327,19 +351,13 @@ def get_task(task_id: int, enrich: bool = True, db: Session = Depends(get_db)):
             "problem_statement": _strip_source_lines(task.problem_statement or ""),
             "full_problem_statement": full_statement,
             "input_format": task.input_format, "output_format": task.output_format, "examples": task.examples,
-            "solution_explanation": _clean_solution_explanation_text(task.solution_explanation),
             "difficulty": _normalize_difficulty(task.difficulty), "subject": _normalize_subject(task.subject),
             "grade": task.grade, "topic": task.topic, "tags": task.tags,
             "attachments": _attachments_from_storage(task.attachments),
             "source_pdf_url": task.source_pdf_url, "source_page_start": task.source_page_start,
             "source_page_end": task.source_page_end,
             "source_fragments": _source_fragments_from_storage(task.source_fragments),
-            "source_solution_pdf_url": _normalize_text_value(getattr(task, "source_solution_pdf_url", "") or ""),
-            "official_solution_text": _normalize_text_value(getattr(task, "official_solution_text", "") or ""),
-            "free_ai_explanation": _normalize_text_value(getattr(task, "free_ai_explanation", "") or ""),
-            "free_ai_status": _normalize_text_value(getattr(task, "free_ai_status", "") or ""),
             "enrich_status": enrich_status,
-            "ai_solution_status": task.ai_solution_status, "ai_solution_error": task.ai_solution_error,
             "answer_input_hint": _answer_input_hint_for_task(task),
             "points": task.points, "time_limit": _time_limit_by_difficulty(task.difficulty)
         }
@@ -349,21 +367,21 @@ def get_task(task_id: int, enrich: bool = True, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Ошибка при получении задачи")
 
 
-@router.get("/tasks/{task_id}/solution")
-def get_task_solution(task_id: int, mark_viewed: bool = True, enrich: bool = True, force_regenerate: bool = False, wait_for_ai: bool = False,
+@router.post("/tasks/{task_id}/solution")
+@limiter.limit("20/minute")
+def get_task_solution(task_id: int, request: Request, enrich: bool = True, force_regenerate: bool = False, wait_for_ai: bool = False,
                       current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
         task = db.query(Task).filter(Task.id == task_id).first()
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
-        if mark_viewed:
-            solutions = db.query(Solution).filter(Solution.user_id == current_user.id, Solution.task_id == task_id).all()
-            if solutions:
-                for sol in solutions:
-                    sol.viewed_solution = True
-            else:
-                db.add(Solution(user_id=current_user.id, task_id=task_id, viewed_solution=True, is_correct=False))
-            db.commit()
+        solutions = db.query(Solution).filter(Solution.user_id == current_user.id, Solution.task_id == task_id).all()
+        if solutions:
+            for sol in solutions:
+                sol.viewed_solution = True
+        else:
+            db.add(Solution(user_id=current_user.id, task_id=task_id, viewed_solution=True, is_correct=False))
+        db.commit()
         enrich_status = "skipped"
         if enrich:
             try:
@@ -548,7 +566,8 @@ def solve_task(task_id: int, user_answer: str, is_daily: bool = False, current_u
         user_grade = current_user.grade or 5
         task_grade = task.grade or 5
         adjusted_points = round(base_n * (1 - (user_grade - task_grade) * 0.1))
-        adjusted_points = max(adjusted_points, 1)  # минимум 1 балл
+        adjusted_points = min(max(adjusted_points, 1), 40)
+        is_task_author = task.created_by == current_user.id
 
         # Бонус +50% за задачу дня
         daily_bonus_applied = False
@@ -562,7 +581,11 @@ def solve_task(task_id: int, user_answer: str, is_daily: bool = False, current_u
                     adjusted_points = round(adjusted_points * 1.5)
                     daily_bonus_applied = True
 
-        points_earned = adjusted_points if is_correct and not previous_correct and not viewed_solution else 0
+        points_earned = (
+            adjusted_points
+            if is_correct and not previous_correct and not viewed_solution and not is_task_author
+            else 0
+        )
         db.add(Solution(user_id=current_user.id, task_id=task_id, answer=user_answer,
                         is_correct=is_correct, points_earned=points_earned, viewed_solution=viewed_solution))
 
@@ -572,7 +595,7 @@ def solve_task(task_id: int, user_answer: str, is_daily: bool = False, current_u
             db.add(user_stats)
         if not previous_correct:
             user_stats.total_solved = (user_stats.total_solved or 0) + 1
-            if is_correct and not viewed_solution:
+            if is_correct and not viewed_solution and not is_task_author:
                 user_stats.correct_answers = (user_stats.correct_answers or 0) + 1
                 user_stats.total_points = (user_stats.total_points or 0) + points_earned
                 user_stats.current_streak = (user_stats.current_streak or 0) + 1
@@ -584,6 +607,8 @@ def solve_task(task_id: int, user_answer: str, is_daily: bool = False, current_u
 
         if previous_correct:
             message = "Эта задача уже была засчитана ранее."
+        elif is_task_author and is_correct:
+            message = "Верно, но за собственную задачу баллы не начисляются."
         elif viewed_solution and is_correct:
             message = "Верно, но баллы не начисляются (решение уже было открыто)."
         elif is_correct:

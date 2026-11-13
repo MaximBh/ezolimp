@@ -1,11 +1,14 @@
 import random
+import os
+import time
 from datetime import datetime
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db, User, Task, Match
 from app.pvp_manager import match_manager
-from app.config import _normalize_subject, _normalize_difficulty, _time_limit_by_difficulty
+from app.auth_middleware import authenticate_token, SESSION_COOKIE_NAME
+from app.config import _normalize_subject, _normalize_difficulty, _time_limit_by_difficulty, CORS_ALLOWED_ORIGINS
 from app.utils.text import strip_source_lines as _strip_source_lines
 from app.task_helpers import build_task_title as _build_task_title, resolve_task_reference_answers as _resolve_task_reference_answers
 from app.utils.answer import check_user_answer_against_reference as _check_user_answer_against_reference
@@ -15,17 +18,48 @@ router = APIRouter()
 
 @router.websocket("/ws/pvp/{user_id}")
 async def pvp_websocket(websocket: WebSocket, user_id: int, db: Session = Depends(get_db)):
-    await match_manager.connect(websocket, user_id)
+    allowed_origins = set(CORS_ALLOWED_ORIGINS)
+    if websocket.headers.get("origin") not in allowed_origins:
+        await websocket.close(code=1008)
+        return
+
+    token = websocket.cookies.get(SESSION_COOKIE_NAME) or websocket.headers.get("authorization")
     try:
-        user = db.query(User).filter(User.id == user_id).first()
-        if not user:
-            await websocket.send_json({"error": "Пользователь не найден"})
-            return
+        user = authenticate_token(token, db)
+    except HTTPException:
+        await websocket.close(code=1008)
+        return
+    if user.id != user_id:
+        await websocket.close(code=1008)
+        return
+
+    await websocket.accept()
+    connected = False
+    try:
+        await match_manager.connect(websocket, user_id, accepted=True)
+        connected = True
+        await websocket.send_json({"type": "authenticated"})
+        message_window_start = time.monotonic()
+        messages_in_window = 0
+
         while True:
             data = await websocket.receive_json()
+            now_monotonic = time.monotonic()
+            if now_monotonic - message_window_start >= 60:
+                message_window_start = now_monotonic
+                messages_in_window = 0
+            messages_in_window += 1
+            if messages_in_window > 120:
+                await websocket.close(code=1008)
+                return
+            if not isinstance(data, dict):
+                await websocket.send_json({"error": "Некорректное сообщение"})
+                continue
             action = data.get("action")
             if action == "find_match":
-                match_manager.add_to_queue(user_id, user.username, user.rating)
+                if not match_manager.add_to_queue(user_id, user.username, user.rating):
+                    await websocket.send_json({"error": "У вас уже есть активный матч"})
+                    continue
                 await websocket.send_json({"type": "queue_joined", "message": "Ищем соперника..."})
                 match_result = await match_manager.find_match(user_id)
                 if match_result:
@@ -75,9 +109,16 @@ async def pvp_websocket(websocket: WebSocket, user_id: int, db: Session = Depend
             elif action == "submit_answer":
                 match_id = data.get("match_id")
                 answer = data.get("answer")
+                if not isinstance(match_id, str) or len(match_id) > 128:
+                    await websocket.send_json({"error": "Некорректный матч"})
+                    continue
+                if not isinstance(answer, str) or not answer.strip() or len(answer) > 500:
+                    await websocket.send_json({"error": "Некорректный ответ"})
+                    continue
+                answer = answer.strip()
                 match = match_manager.submit_answer(match_id, user_id, answer)
                 if not match:
-                    await websocket.send_json({"error": "Матч не найден"})
+                    await websocket.send_json({"error": "Матч не найден или ответ уже отправлен"})
                     continue
                 task = db.query(Task).filter(Task.id == match["task_id"]).first()
                 reference_answers, manual_check = _resolve_task_reference_answers(task)
@@ -95,7 +136,7 @@ async def pvp_websocket(websocket: WebSocket, user_id: int, db: Session = Depend
                     "your_score": match["player1_score"] if match["player1"]["user_id"] == user_id else match["player2_score"],
                     "opponent_score": match["player2_score"] if match["player1"]["user_id"] == user_id else match["player1_score"],
                 })
-                if match["player1_answer"] and match["player2_answer"]:
+                if match["player1_answer"] and match["player2_answer"] and match_manager.claim_result_processing(match_id):
                     winner_id = None
                     if match["player1_score"] > match["player2_score"]:
                         winner_id = match["player1"]["user_id"]
@@ -137,7 +178,12 @@ async def pvp_websocket(websocket: WebSocket, user_id: int, db: Session = Depend
                         await match_manager.connections[opponent_id].send_json(opp_result)
                     match_manager.finish_match(match_id)
     except WebSocketDisconnect:
-        match_manager.disconnect(user_id)
+        if connected:
+            match_manager.disconnect(user_id, websocket)
     except Exception as e:
-        await websocket.send_json({"error": "Внутренняя ошибка"})
-        match_manager.disconnect(user_id)
+        try:
+            await websocket.send_json({"error": "Внутренняя ошибка"})
+        except Exception:
+            pass
+        if connected:
+            match_manager.disconnect(user_id, websocket)

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.database import get_db, User, Task
+from app.database import get_db, User, Task, AdminAuditLog
 from app.auth_middleware import get_admin_user
 import app.cache as app_cache
 from app.config import (
@@ -142,6 +142,10 @@ def import_tasks(tasks_data: dict, current_user: User = Depends(get_admin_user),
                 created_by=current_user.id,
             ))
             imported_count += 1
+        db.add(AdminAuditLog(
+            actor_user_id=current_user.id, action="tasks.imported", resource_type="task_batch",
+            details=f'{{"count":{imported_count}}}',
+        ))
         db.commit()
         app_cache.invalidate_prefix("tasks:")
         return {"message": f"Imported tasks: {imported_count}"}
@@ -154,6 +158,10 @@ def import_tasks(tasks_data: dict, current_user: User = Depends(get_admin_user),
 def delete_all_tasks(current_user: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     try:
         count = db.query(Task).count()
+        db.add(AdminAuditLog(
+            actor_user_id=current_user.id, action="tasks.deleted_all", resource_type="task_batch",
+            details=f'{{"count":{count}}}',
+        ))
         db.query(Task).delete()
         db.commit()
         app_cache.invalidate_prefix("tasks:")

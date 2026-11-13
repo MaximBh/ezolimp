@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EzOlimp — Админ</title>
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="stylesheet" href="shared.css">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared.css">
 <script>var d=document.documentElement;d.setAttribute("data-theme",localStorage.getItem("ez-theme")||"light");d.classList.add("no-transition");window.addEventListener("load",function(){d.classList.remove("no-transition")})</script>
 <style>
 .admin-wrap { max-width:1100px; margin:0 auto; padding:96px 40px 80px; }
@@ -156,7 +156,7 @@
           <h3>Импорт задач</h3>
           <p>Загрузите JSON файл с задачами</p>
           <input type="file" id="importFile" accept=".json" style="display:none">
-          <button class="btn btn-accent btn-sm" onclick="document.getElementById('importFile').click()">Выбрать файл</button>
+          <button class="btn btn-accent btn-sm" id="selectImportFile" type="button">Выбрать файл</button>
         </div>
         <div class="import-box">
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -172,15 +172,15 @@
 </main>
 </div>
 
-<script src="layout.js"></script>
-<script src="shared.js"></script>
+<script src="/layout.js"></script>
+<script src="/shared.js"></script>
 <script>
-renderNav('admin.html');
+renderNav('/admin');
 renderFooter();
 
-const token = localStorage.getItem('token');
+const token = (localStorage.getItem('user') ? 'cookie' : null);
 const user = JSON.parse(localStorage.getItem('user') || '{}');
-if (!token || !user.is_admin) { alert('Доступ запрещён'); location.href = 'main.html'; }
+if (!token || !user.is_admin) { alert('Доступ запрещён'); location.href = '/'; }
 
 // tabs
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -196,6 +196,16 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 
 function escHtml(v) { return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 const diffLabels = { easy:'Лёгкая', medium:'Средняя', hard:'Сложная' };
+
+document.getElementById('selectImportFile').addEventListener('click', () => document.getElementById('importFile').click());
+document.getElementById('usersBody').addEventListener('click', event => {
+  const button = event.target.closest('[data-delete-user]');
+  if (button) deleteUser(Number(button.dataset.deleteUser));
+});
+document.getElementById('tasksBody').addEventListener('click', event => {
+  const button = event.target.closest('[data-delete-task]');
+  if (button) deleteTask(Number(button.dataset.deleteTask));
+});
 
 async function loadStats() {
   try {
@@ -223,7 +233,7 @@ async function loadUsers() {
         <td>${escHtml(u.email)}</td>
         <td>${u.rating ?? 1000}</td>
         <td>${u.is_admin ? '<span style="background:var(--accent-l);color:var(--accent);padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600">Админ</span>' : '<span style="background:var(--bg2);color:var(--text3);padding:2px 8px;border-radius:4px;font-size:12px">Пользователь</span>'}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})">Удалить</button></td>
+        <td><button class="btn btn-danger btn-sm" type="button" data-delete-user="${Number(u.id)}">Удалить</button></td>
       </tr>`).join('');
   } catch { document.getElementById('usersBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--accent)">Ошибка загрузки</td></tr>'; }
 }
@@ -240,9 +250,9 @@ async function loadTasks() {
         <td>${t.id}</td>
         <td style="color:var(--text);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(t.title)}</td>
         <td>${escHtml(t.subject)}</td>
-        <td>${diffLabels[t.difficulty] || t.difficulty}</td>
+        <td>${escHtml(diffLabels[t.difficulty] || t.difficulty)}</td>
         <td>${t.points}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="deleteTask(${t.id})">Удалить</button></td>
+        <td><button class="btn btn-danger btn-sm" type="button" data-delete-task="${Number(t.id)}">Удалить</button></td>
       </tr>`).join('');
   } catch { document.getElementById('tasksBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--accent)">Ошибка загрузки</td></tr>'; }
 }

@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EzOlimp — PvP</title>
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="stylesheet" href="shared.css">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared.css">
 <script>var d=document.documentElement;d.setAttribute("data-theme",localStorage.getItem("ez-theme")||"light");d.classList.add("no-transition");window.addEventListener("load",function(){d.classList.remove("no-transition")})</script>
 <style>
 .pvp-wrap { max-width:860px; margin:0 auto; padding:96px 40px 80px; }
@@ -164,7 +164,7 @@
       <div class="rating-change"><p>Изменение рейтинга</p><span id="ratingChange">+0</span></div>
       <div class="result-btns">
         <button class="btn btn-accent" id="playAgainBtn">Играть ещё</button>
-        <a href="main.html" class="btn btn-outline">На главную</a>
+        <a href="/" class="btn btn-outline">На главную</a>
       </div>
     </div>
   </div>
@@ -174,18 +174,18 @@
 </div>
 
 
-<script src="layout.js"></script>
-<script src="shared.js"></script>
+<script src="/layout.js"></script>
+<script src="/shared.js"></script>
 <script>
-renderNav('pvp.html');
+renderNav('/pvp');
 renderFooter();
 
-const WS_URL = location.port === "3000"
+const WS_URL = location.port === "3000" && ["localhost", "127.0.0.1"].includes(location.hostname)
   ? `ws://${location.hostname}:8001`
   : `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`;
 const user = JSON.parse(localStorage.getItem('user') || '{}');
-const token = localStorage.getItem('token');
-if (!token || !user.id) { location.href='main.html?auth=1'; }
+const token = (localStorage.getItem('user') ? 'cookie' : null);
+if (!token || !user.id) { location.href='/?auth=1'; }
 
 let ws=null, matchId=null, timerInterval=null, timerStart=null;
 let visualRequestSeq = 0;
@@ -320,15 +320,16 @@ function stopTimer() { clearInterval(timerInterval); timerInterval=null; }
 document.getElementById('findMatchBtn').addEventListener('click', ()=>{
   show('searchingScreen');
   ws = new WebSocket(`${WS_URL}/ws/pvp/${user.id}`);
-  ws.onopen = ()=> ws.send(JSON.stringify({action:'find_match'}));
   ws.onmessage = e => {
     const d = JSON.parse(e.data);
-    if (d.type==='match_found') {
+    if (d.type==='authenticated') {
+      ws.send(JSON.stringify({action:'find_match'}));
+    } else if (d.type==='match_found') {
       matchId = d.match_id;
       document.getElementById('yourName').textContent = user.username;
       document.getElementById('oppName').textContent = d.opponent;
-      if (d.your_avatar) document.getElementById('yourAvatar').src = d.your_avatar;
-      if (d.opponent_avatar) document.getElementById('oppAvatar').src = d.opponent_avatar;
+      if (d.your_avatar) document.getElementById('yourAvatar').src = safeAvatarSrc(d.your_avatar);
+      if (d.opponent_avatar) document.getElementById('oppAvatar').src = safeAvatarSrc(d.opponent_avatar);
       document.getElementById('yourScore').textContent = 0;
       document.getElementById('oppScore').textContent = 0;
       document.getElementById('matchTitle').textContent = d.task.title;

@@ -1,7 +1,6 @@
 import json
 import re
 from pathlib import Path
-from urllib.request import Request, urlopen
 
 from app.config import (
     _safe_int, _normalize_subject, _normalize_difficulty, _time_limit_by_difficulty,
@@ -31,6 +30,7 @@ from app.utils.pdf import (
     find_fragment_for_chunk_in_pdf as _find_fragment_for_chunk_in_pdf,
     split_statement_by_points_markers as _split_statement_by_points_markers,
 )
+from app.utils.safe_http import open_pdf_url
 from app.task_helpers import (
     parse_title_parts as _parse_title_parts,
     build_task_title as _build_task_title,
@@ -55,16 +55,9 @@ def _build_solution_pdf_candidates(source_pdf_url: str) -> list:
 
 
 def _url_exists(url: str) -> bool:
-    if not url:
-        return False
-    if not (url.startswith("http://") or url.startswith("https://")):
-        path = Path(url)
-        if not path.is_absolute():
-            path = PROJECT_ROOT / path
-        return path.exists()
     for method in ("HEAD", "GET"):
         try:
-            with urlopen(Request(url, method=method), timeout=12) as resp:
+            with open_pdf_url(url, method=method, timeout=12) as resp:
                 if 200 <= getattr(resp, "status", 200) < 400:
                     return True
         except Exception:

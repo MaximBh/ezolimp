@@ -1,7 +1,7 @@
 from fastapi import WebSocket
 from typing import Dict, List
 import json
-import random
+import secrets
 
 import asyncio
 
@@ -12,22 +12,30 @@ class MatchManager:
         self.connections: Dict[int, WebSocket] = {}
         self.lock = asyncio.Lock()
     
-    async def connect(self, websocket: WebSocket, user_id: int):
-        await websocket.accept()
+    async def connect(self, websocket: WebSocket, user_id: int, accepted: bool = False):
+        if not accepted:
+            await websocket.accept()
         if user_id in self.connections:
+            previous = self.connections[user_id]
             try:
-                await self.connections[user_id].close()
+                await previous.close()
             except Exception:
                 pass
-            self.disconnect(user_id)
+            self.disconnect(user_id, previous)
         self.connections[user_id] = websocket
     
-    def disconnect(self, user_id: int):
-        if user_id in self.connections:
+    def disconnect(self, user_id: int, websocket: WebSocket | None = None):
+        if self.connections.get(user_id) is websocket:
             del self.connections[user_id]
-        self.waiting_players = [p for p in self.waiting_players if p["user_id"] != user_id]
+            self.waiting_players = [p for p in self.waiting_players if p["user_id"] != user_id]
     
     def add_to_queue(self, user_id: int, username: str, rating: int):
+        if any(
+            match["status"] == "active"
+            and user_id in (match["player1"]["user_id"], match["player2"]["user_id"])
+            for match in self.active_matches.values()
+        ):
+            return False
         # Удаляем старые записи этого пользователя, если они есть
         self.waiting_players = [p for p in self.waiting_players if p["user_id"] != user_id]
         self.waiting_players.append({
@@ -35,6 +43,7 @@ class MatchManager:
             "username": username,
             "rating": rating
         })
+        return True
     
     async def find_match(self, user_id: int):
         async with self.lock:
@@ -57,7 +66,7 @@ class MatchManager:
             return current_player, opponent
     
     def create_match(self, player1: Dict, player2: Dict, task_id: int):
-        match_id = f"{player1['user_id']}_{player2['user_id']}_{random.randint(1000, 9999)}"
+        match_id = secrets.token_urlsafe(24)
         
         self.active_matches[match_id] = {
             "match_id": match_id,
@@ -82,11 +91,29 @@ class MatchManager:
             return None
         
         if match["player1"]["user_id"] == user_id:
+            if match["player1_answer"] is not None:
+                return None
             match["player1_answer"] = answer
         elif match["player2"]["user_id"] == user_id:
+            if match["player2_answer"] is not None:
+                return None
             match["player2_answer"] = answer
+        else:
+            return None
         
         return match
+
+    def claim_result_processing(self, match_id: str) -> bool:
+        match = self.active_matches.get(match_id)
+        if (
+            not match
+            or not match["player1_answer"]
+            or not match["player2_answer"]
+            or match.get("result_processing")
+        ):
+            return False
+        match["result_processing"] = True
+        return True
     
     def finish_match(self, match_id: str):
         if match_id in self.active_matches:

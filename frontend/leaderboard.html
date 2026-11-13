@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EzOlimp — Рейтинг</title>
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="stylesheet" href="shared.css">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared.css">
 <script>var d=document.documentElement;d.setAttribute("data-theme",localStorage.getItem("ez-theme")||"light");d.classList.add("no-transition");window.addEventListener("load",function(){d.classList.remove("no-transition")})</script>
 <style>
 .lb-wrap { max-width:900px; margin:0 auto; padding:96px 40px 80px; }
@@ -53,8 +53,8 @@
   </div>
 
   <div class="lb-tabs">
-    <button class="lb-tab active" id="tabElo" onclick="switchTab('elo')">По Elo рейтингу</button>
-    <button class="lb-tab" id="tabPoints" onclick="switchTab('points')">По баллам</button>
+    <button class="lb-tab active" id="tabElo" type="button">По Elo рейтингу</button>
+    <button class="lb-tab" id="tabPoints" type="button">По баллам</button>
   </div>
 
   <div class="lb-table fade-up">
@@ -68,11 +68,16 @@
 </main>
 </div>
 
-<script src="layout.js"></script>
-<script src="shared.js"></script>
+<script src="/layout.js"></script>
+<script src="/shared.js"></script>
 <script>
-renderNav('leaderboard.html');
+renderNav('/leaderboard');
 renderFooter();
+
+function escHtml(value) {
+  return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function escAttr(value) { return escHtml(value); }
 
 let currentSort = 'elo';
 
@@ -91,6 +96,9 @@ function switchTab(sort) {
 
   loadLeaderboard(sort);
 }
+
+document.getElementById('tabElo').addEventListener('click', () => switchTab('elo'));
+document.getElementById('tabPoints').addEventListener('click', () => switchTab('points'));
 
 async function loadLeaderboard(sort = 'elo') {
   document.getElementById('lbBody').innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)">Загрузка...</div>';
@@ -113,13 +121,13 @@ async function loadLeaderboard(sort = 'elo') {
       <div class="lb-row">
         <div class="lb-rank ${rankClass(u.rank)}">${rankIcon(u.rank)}</div>
         <div class="lb-user">
-          <img class="lb-avatar" src="${u.avatar_url||'https://via.placeholder.com/36'}" alt="">
-          <div><div class="lb-name">${u.full_name||u.username}</div><div class="lb-username">@${u.username}</div></div>
+        <img class="lb-avatar" src="${escAttr(safeAvatarSrc(u.avatar_url, 'https://via.placeholder.com/36'))}" alt="">
+          <div><div class="lb-name">${escHtml(u.full_name||u.username)}</div><div class="lb-username">@${escHtml(u.username)}</div></div>
         </div>
-        <div style="font-size:14px;color:var(--text2)">${u.school||'—'}</div>
+        <div style="font-size:14px;color:var(--text2)">${escHtml(u.school||'—')}</div>
         <div>${valueCol(u)}</div>
         <div style="font-size:14px;color:var(--text2)">${u.total_solved}</div>
-        <div><a class="lb-link" href="profile.html?id=${u.id}">Профиль</a></div>
+        <div><a class="lb-link" href="/profile/${u.id}">Профиль</a></div>
       </div>`).join('');
   } catch {
     document.getElementById('lbBody').innerHTML = '<div style="padding:40px;text-align:center;color:var(--accent)">Ошибка загрузки</div>';

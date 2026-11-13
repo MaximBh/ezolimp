@@ -1,6 +1,7 @@
 import os
 import re
 from pathlib import Path
+from urllib.parse import urlsplit
 from app.utils.text import _fix_mojibake_text, URL_RE
 
 
@@ -23,6 +24,15 @@ def _load_env_file(path: Path):
 
 
 _seen_env_paths: set = set()
+_explicit_env_file = os.getenv("EZOLIMP_ENV_FILE", "").strip()
+if _explicit_env_file:
+    _external_env_path = Path(_explicit_env_file).expanduser()
+elif os.name == "nt" and os.getenv("LOCALAPPDATA"):
+    _external_env_path = Path(os.environ["LOCALAPPDATA"]) / "EzOlimp" / "ezolimp.env"
+else:
+    _config_home = Path(os.getenv("XDG_CONFIG_HOME", str(Path.home() / ".config"))).expanduser()
+    _external_env_path = _config_home / "ezolimp" / "ezolimp.env"
+_load_env_file(_external_env_path.resolve())
 _search_dirs = [
     Path(__file__).resolve().parents[2],
     Path(__file__).resolve().parents[1],
@@ -48,10 +58,58 @@ def _safe_int(value, default):
 APP_DIR = Path(__file__).resolve().parent
 BACKEND_DIR = APP_DIR.parent
 PROJECT_ROOT = BACKEND_DIR.parent
-CACHE_DIR = BACKEND_DIR / "cache"
+APP_ENV = os.getenv("APP_ENV", "development").strip().lower()
+IS_PRODUCTION = APP_ENV == "production" or os.getenv("PROD", "").strip() == "1"
+PUBLIC_ORIGIN = os.getenv("PUBLIC_ORIGIN", "").strip().rstrip("/")
+CORS_ALLOWED_ORIGINS = tuple(
+    origin.strip()
+    for origin in os.getenv(
+        "CORS_ALLOWED_ORIGINS",
+        "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8001,http://127.0.0.1:8001",
+    ).split(",")
+    if origin.strip()
+)
+_data_dir_setting = os.getenv("EZOLIMP_DATA_DIR", "").strip()
+DATA_DIR = Path(_data_dir_setting).expanduser().resolve() if _data_dir_setting else BACKEND_DIR
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+if not DATABASE_URL:
+    DATABASE_URL = (
+        f"sqlite:///{(DATA_DIR / 'olimpiada.db').as_posix()}"
+        if _data_dir_setting
+        else "sqlite:///./olimpiada.db"
+    )
+CACHE_DIR = Path(os.getenv("EZOLIMP_CACHE_DIR", str(BACKEND_DIR / "cache"))).expanduser().resolve()
 PDF_SOURCE_CACHE_DIR = CACHE_DIR / "pdf_sources"
 PDF_FRAGMENT_CACHE_DIR = CACHE_DIR / "pdf_fragments"
 TASK_CROPS_DIR = CACHE_DIR / "task_crops"
+
+if IS_PRODUCTION:
+    _public = urlsplit(PUBLIC_ORIGIN)
+    _configured_origins = list(CORS_ALLOWED_ORIGINS)
+    if (
+        _public.scheme != "https"
+        or not _public.netloc
+        or _public.username
+        or _public.password
+        or _public.path
+        or _public.query
+        or _public.fragment
+    ):
+        raise RuntimeError("Production PUBLIC_ORIGIN must be an HTTPS origin without a path")
+    if not _configured_origins or "*" in _configured_origins or PUBLIC_ORIGIN not in _configured_origins:
+        raise RuntimeError("Production CORS_ALLOWED_ORIGINS must explicitly include PUBLIC_ORIGIN")
+    for _origin in _configured_origins:
+        _parsed_origin = urlsplit(_origin)
+        if (
+            _parsed_origin.scheme != "https"
+            or not _parsed_origin.netloc
+            or _parsed_origin.username
+            or _parsed_origin.password
+            or _parsed_origin.path
+            or _parsed_origin.query
+            or _parsed_origin.fragment
+        ):
+            raise RuntimeError("Production CORS_ALLOWED_ORIGINS may contain only explicit HTTPS origins")
 
 TIME_LIMIT_BY_DIFFICULTY = {"easy": 30, "medium": 60, "hard": 90}
 

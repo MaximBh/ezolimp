@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EzOlimp — Тренировка</title>
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="stylesheet" href="shared.css">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/shared.css">
 <script>var d=document.documentElement;d.setAttribute("data-theme",localStorage.getItem("ez-theme")||"light");d.classList.add("no-transition");window.addEventListener("load",function(){d.classList.remove("no-transition")})</script>
 <style>
 .training-wrap { max-width:860px; margin:0 auto; padding:96px 40px 80px; }
@@ -156,12 +156,12 @@
 }
 .solution-code-copy:hover { background:#383b47; }
 .solution-code pre {
-  max-height:560px;
-  overflow:auto;
+  overflow:visible;
   margin:0;
   padding:16px 18px;
   color:#e8eaf0;
-  white-space:pre;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
   font:13px/1.7 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   tab-size:4;
 }
@@ -325,10 +325,10 @@
 </div>
 
 
-<script src="layout.js"></script>
-<script src="shared.js"></script>
+<script src="/layout.js"></script>
+<script src="/shared.js"></script>
 <script>
-renderNav('training.html');
+renderNav('/training');
 renderFooter();
 
 const diffLabels = { easy:'Лёгкая', medium:'Средняя', hard:'Сложная' };
@@ -569,10 +569,10 @@ async function loadTask(id=null) {
     document.getElementById('taskTitle').textContent = currentTask.title;
     document.getElementById('taskMeta').innerHTML = `
       ${isDailyTask ? '<span class="badge" style="background:var(--accent-l);color:var(--accent);border:1px solid var(--accent-m)">🔥 Задача дня +50% баллов</span>' : ''}
-      <span class="badge ${cls}">${diffLabels[diff]||diff}</span>
-      <span class="badge" style="background:var(--bg2);color:var(--text2)">${currentTask.subject||''}</span>
-      ${currentTask.grade ? `<span class="badge" style="background:var(--bg2);color:var(--text2)">${currentTask.grade} класс</span>` : ''}
-      <span class="badge" style="background:var(--bg2);color:var(--text2)">${bonusPoints} баллов</span>`;
+      <span class="badge ${cls}">${escHtml(diffLabels[diff]||diff)}</span>
+      <span class="badge" style="background:var(--bg2);color:var(--text2)">${escHtml(currentTask.subject||'')}</span>
+      ${currentTask.grade ? `<span class="badge" style="background:var(--bg2);color:var(--text2)">${escHtml(currentTask.grade)} класс</span>` : ''}
+      <span class="badge" style="background:var(--bg2);color:var(--text2)">${escHtml(bonusPoints)} баллов</span>`;
     document.getElementById('taskStatement').textContent = stripSource(currentTask.full_problem_statement || currentTask.problem_statement || '');
     loadTaskVisual(currentTask, seq);
     document.getElementById('answerSection').style.display = 'block';
@@ -751,7 +751,7 @@ async function runPendingAnswerCheck() {
 }
 
 async function submitAnswer() {
-  const token = localStorage.getItem('token');
+  const token = (localStorage.getItem('user') ? 'cookie' : null);
   if (!token) { alert('Войдите в систему'); return; }
   if (!currentTask) return;
   const ans = document.getElementById('answerInput').value.trim();
@@ -1049,7 +1049,7 @@ function handleSolutionSnapshot(sol, token, taskId, seq, attempt = 0) {
 async function pollAiSolution(taskId, token, seq, attempt = 0) {
   if (seq !== solutionRequestSeq || taskId !== solutionTaskId) return;
   try {
-    const r = await fetch(`${API_URL}/tasks/${taskId}/solution?mark_viewed=false&enrich=false&wait_for_ai=false&_t=${Date.now()}`, { headers:{ Authorization: token } });
+    const r = await fetch(`${API_URL}/tasks/${taskId}/solution?mark_viewed=false&enrich=false&wait_for_ai=false&_t=${Date.now()}`, { method:'POST', headers:{ Authorization: token } });
     if (!r.ok) throw new Error();
     const sol = await r.json();
     if (seq !== solutionRequestSeq || taskId !== solutionTaskId) return;
@@ -1067,7 +1067,7 @@ async function pollAiSolution(taskId, token, seq, attempt = 0) {
 
 async function startSolutionGenerationForCurrentTask(forceRegenerate = false, revealSolution = false) {
   if (!currentTask || !currentTask.id) return;
-  const token = localStorage.getItem('token');
+  const token = (localStorage.getItem('user') ? 'cookie' : null);
   if (!token) return;
 
   const taskId = currentTask.id;
@@ -1082,7 +1082,7 @@ async function startSolutionGenerationForCurrentTask(forceRegenerate = false, re
     }
     // Notify server that user explicitly viewed the solution
     if (revealSolution) {
-      fetch(`${API_URL}/tasks/${taskId}/solution?mark_viewed=true&enrich=false&wait_for_ai=false`, { headers:{ Authorization: token } }).catch(() => {});
+      fetch(`${API_URL}/tasks/${taskId}/solution?mark_viewed=true&enrich=false&wait_for_ai=false`, { method:'POST', headers:{ Authorization: token } }).catch(() => {});
     }
     if (isSolutionGenerating(solutionSnapshot, solutionSnapshot.free_ai_explanation || '') && !solutionPollTimer) {
       startSolutionGenerationTimer(taskId, solutionSnapshot.ai_solution_generated_at);
@@ -1119,7 +1119,7 @@ async function startSolutionGenerationForCurrentTask(forceRegenerate = false, re
     const query = forceRegenerate
       ? `mark_viewed=${markViewed}&enrich=false&wait_for_ai=false&force_regenerate=true`
       : `mark_viewed=${markViewed}&enrich=false&wait_for_ai=false`;
-    const r = await fetch(`${API_URL}/tasks/${taskId}/solution?${query}`, { headers:{ Authorization: token } });
+    const r = await fetch(`${API_URL}/tasks/${taskId}/solution?${query}`, { method:'POST', headers:{ Authorization: token } });
     if (!r.ok) throw new Error();
     const sol = await r.json();
     if (seq !== solutionRequestSeq || taskId !== solutionTaskId) return;
@@ -1138,7 +1138,7 @@ async function showSolution(forceRegenerate = false) {
   if (typeof forceRegenerate === 'object' && forceRegenerate !== null) {
     forceRegenerate = false;
   }
-  const token = localStorage.getItem('token');
+  const token = (localStorage.getItem('user') ? 'cookie' : null);
   if (!token) { alert('Войдите в систему'); return; }
   if (!currentTask) return;
   if (solutionVisible && !forceRegenerate) {
@@ -1166,7 +1166,8 @@ document.addEventListener('click', event => {
   document.getElementById('taskReportToggle').setAttribute('aria-expanded', 'false');
 });
 
-const taskId = new URLSearchParams(location.search).get('task');
+const taskId = location.pathname.match(/^\/training\/(\d+)\/?$/)?.[1]
+  || new URLSearchParams(location.search).get('task');
 loadTask(taskId);
 </script>
 </body>

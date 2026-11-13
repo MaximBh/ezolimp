@@ -2,18 +2,22 @@
 
 function renderNav(activePage) {
   const links = [
-    ['main.html',       'Главная'],
-    ['catalog.html',    'Каталог задач'],
-    ['training.html',   'Тренировка'],
-    ['pvp.html',        'PvP'],
-    ['leaderboard.html','Рейтинг'],
-    ['analytics.html',  'Аналитика'],
+    ['/',               'Главная'],
+    ['/catalog',        'Каталог задач'],
+    ['/training',       'Тренировка'],
+    ['/pvp',            'PvP'],
+    ['/leaderboard',    'Рейтинг'],
+    ['/analytics',      'Аналитика'],
   ];
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  if (user.is_admin) links.push(['admin.html', 'Админ']);
+  if (user.is_admin) links.push(['/admin', 'Админ']);
+  const currentPath = location.pathname.replace(/\/+$/, '') || '/';
+  const currentPage = /^\/(training|profile)\/[^/]+$/.test(currentPath)
+    ? currentPath.replace(/\/[^/]+$/, '')
+    : currentPath;
   const linksHtml = links.map(([href, label]) =>
-    `<a href="${href}" class="${activePage === href ? 'active' : ''}">${label}</a>`
+    `<a href="${href}" class="${activePage === href && currentPage === href ? 'active' : ''}">${label}</a>`
   ).join('');
 
   const logoSvg = `<svg class="logo-svg" viewBox="0 0 28 28" fill="none">
@@ -34,7 +38,7 @@ function renderNav(activePage) {
   const pageWrap = document.querySelector('.page-wrap');
   const navHtml = `
     <nav>
-      <a href="main.html" class="nav-logo">${logoSvg}<span class="nav-logo-text">Ez<em>Olimp</em></span></a>
+      <a href="/" class="nav-logo">${logoSvg}<span class="nav-logo-text">Ez<em>Olimp</em></span></a>
       <div class="nav-links">${linksHtml}</div>
       <div class="nav-right">
         <button class="theme-btn" id="themeBtn" title="Сменить тему">${sunIcon}</button>
@@ -43,7 +47,7 @@ function renderNav(activePage) {
             <img id="navAvatarImg" src="https://api.dicebear.com/7.x/initials/svg?seed=demo&backgroundColor=7048b8&textColor=ffffff" alt="avatar">
           </button>
           <div class="nav-avatar-drop" id="navAvatarDrop">
-            <a href="profile.html">Профиль</a>
+            <a href="/profile">Профиль</a>
             <button id="logoutBtn">Выйти</button>
           </div>
         </div>
@@ -55,7 +59,7 @@ function renderNav(activePage) {
     </nav>
     <div class="mobile-menu" id="mobileMenu">${
       links.map(([href, label]) =>
-        `<a href="${href}" class="${activePage === href ? 'active' : ''}">${label}</a>`
+        `<a href="${href}" class="${activePage === href && currentPage === href ? 'active' : ''}">${label}</a>`
       ).join('')
     }</div>`;
 
@@ -76,7 +80,7 @@ function renderFooter() {
     <footer>
       <div class="footer-inner">
         <div class="footer-brand">
-          <a href="main.html" class="nav-logo" style="display:inline-flex;">
+          <a href="/" class="nav-logo" style="display:inline-flex;">
             ${logoSvg}<span class="nav-logo-text">Ez<em>Olimp</em></span>
           </a>
           <p>Платформа для подготовки к олимпиадам с PvP-режимом и автоматической проверкой решений.</p>
@@ -84,11 +88,11 @@ function renderFooter() {
         <div>
           <h5>Разделы</h5>
           <ul>
-            <li><a href="catalog.html">Каталог задач</a></li>
-            <li><a href="training.html">Тренировка</a></li>
-            <li><a href="pvp.html">PvP матчи</a></li>
-            <li><a href="leaderboard.html">Рейтинг</a></li>
-            <li><a href="analytics.html">Аналитика</a></li>
+            <li><a href="/catalog">Каталог задач</a></li>
+            <li><a href="/training">Тренировка</a></li>
+            <li><a href="/pvp">PvP матчи</a></li>
+            <li><a href="/leaderboard">Рейтинг</a></li>
+            <li><a href="/analytics">Аналитика</a></li>
           </ul>
         </div>
         <div>

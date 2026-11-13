@@ -1,16 +1,20 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+import hashlib
+import html
 import re
-from fastapi import APIRouter, Depends, HTTPException, Request
-from slowapi import Limiter
-from slowapi.util import get_remote_address
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, Header
 from sqlalchemy.orm import Session
-from app.database import get_db, User, hash_password, verify_password
+from app.database import get_db, User, LoginAttempt, hash_password, verify_password
 from app.schemas import UserRegister, UserLogin, UserProfileUpdate
-from app.auth_middleware import get_current_user, create_token, get_admin_user, _invalidate_user_cache
+from app.auth_middleware import (
+    get_current_user, create_token, get_admin_user, _invalidate_user_cache,
+    authenticate_token, set_session_cookie, clear_session_cookie, SESSION_COOKIE_NAME,
+)
+from app.config import CORS_ALLOWED_ORIGINS
+from app.rate_limits import limiter, enforce_persistent_auth_ip_limit
 import base64
 
 router = APIRouter()
-limiter = Limiter(key_func=get_remote_address)
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
@@ -32,7 +36,7 @@ def validate_registration_data(user_data: UserRegister):
 
 
 def generate_default_avatar(name: str) -> str:
-    letter = name.strip()[0].upper() if name and name.strip() else "?"
+    letter = html.escape(name.strip()[0].upper() if name and name.strip() else "?")
     svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150">
   <defs>
     <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -50,6 +54,7 @@ def generate_default_avatar(name: str) -> str:
 @limiter.limit("5/minute")
 def register(request: Request, user_data: UserRegister, db: Session = Depends(get_db)):
     try:
+        enforce_persistent_auth_ip_limit(request, db, "register", 5)
         validate_registration_data(user_data)
         if db.query(User).filter(User.username == user_data.username).first():
             raise HTTPException(status_code=400, detail="Пользователь с таким именем уже существует")
@@ -76,16 +81,37 @@ def register(request: Request, user_data: UserRegister, db: Session = Depends(ge
 
 @router.post("/auth/login")
 @limiter.limit("10/minute")
-def login(request: Request, login_data: UserLogin, db: Session = Depends(get_db)):
+def login(request: Request, response: Response, login_data: UserLogin, db: Session = Depends(get_db)):
     try:
-        user = db.query(User).filter(User.username == login_data.username).first()
+        enforce_persistent_auth_ip_limit(request, db, "login", 10)
+        now = datetime.utcnow()
+        username_key = hashlib.sha256(login_data.username.strip().casefold().encode("utf-8")).hexdigest()
+        db.connection().exec_driver_sql("BEGIN IMMEDIATE")
+        db.query(LoginAttempt).filter(
+            LoginAttempt.attempted_at < now - timedelta(days=2)
+        ).delete(synchronize_session=False)
+        failed_attempts = db.query(LoginAttempt).filter(
+            LoginAttempt.username_hash == username_key,
+            LoginAttempt.attempted_at >= now - timedelta(minutes=15),
+        ).count()
+        if failed_attempts >= 10:
+            db.rollback()
+            raise HTTPException(status_code=429, detail="Слишком много неудачных попыток. Повторите позже.")
+
+        db.add(LoginAttempt(username_hash=username_key, attempted_at=now))
+        db.commit()
+
+        user = db.query(User).filter(User.username == login_data.username.strip()).first()
         if not user or not verify_password(login_data.password, user.password_hash):
             raise HTTPException(status_code=401, detail="Неверное имя пользователя или пароль")
         user.last_login = datetime.now()
+        db.query(LoginAttempt).filter(
+            LoginAttempt.username_hash == username_key
+        ).delete(synchronize_session=False)
         db.commit()
+        set_session_cookie(response, create_token(user.id, user.session_version))
         return {
             "message": "Вход выполнен успешно",
-            "token": f"Bearer {create_token(user.id)}",
             "user": {"id": user.id, "username": user.username, "full_name": user.full_name, "is_admin": user.is_admin}
         }
     except HTTPException:
@@ -127,7 +153,25 @@ def update_me(profile_data: UserProfileUpdate, current_user: User = Depends(get_
 
 
 @router.post("/auth/logout")
-def logout(current_user: User = Depends(get_current_user)):
+def logout(
+    request: Request,
+    response: Response,
+    authorization: str | None = Header(None),
+    db: Session = Depends(get_db),
+):
+    cookie_token = request.cookies.get(SESSION_COOKIE_NAME)
+    origin = request.headers.get("origin")
+    if cookie_token and origin not in CORS_ALLOWED_ORIGINS:
+        raise HTTPException(status_code=403, detail="Недопустимый Origin")
+    token = authorization or cookie_token
+    if token:
+        try:
+            current_user = authenticate_token(token, db)
+            current_user.session_version += 1
+            db.commit()
+        except HTTPException:
+            db.rollback()
+    clear_session_cookie(response)
     return {"message": "Выход выполнен"}
 
 

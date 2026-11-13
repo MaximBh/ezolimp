@@ -24,8 +24,8 @@ if defined DRY_RUN (
   echo Python path: "%VENV_PY%"
   echo Ollama:      "%OLLAMA_EXE%" serve  ^(with OLLAMA_MODELS from .env.local if set^)
   echo DB init:     cd /d "%ROOT%\backend" ^&^& "%VENV_PY%" -c "from app.database import create_tables; create_tables()"
-  echo Backend:     cd /d "%ROOT%\backend" ^&^& "%VENV_PY%" -m uvicorn app.main:app --host 0.0.0.0 --port %BACKEND_PORT%
-  echo Frontend:    cd /d "%ROOT%\frontend" ^&^& "%VENV_PY%" -m http.server %FRONTEND_PORT%
+  echo Backend:     cd /d "%ROOT%\backend" ^&^& "%VENV_PY%" -m uvicorn app.main:app --host 127.0.0.1 --port %BACKEND_PORT% --ws-max-size 65536
+  echo Frontend:    cd /d "%ROOT%\frontend" ^&^& "%VENV_PY%" server.py %FRONTEND_PORT%
   exit /b 0
 )
 
@@ -48,14 +48,14 @@ if not exist "%VENV_PY%" (
 )
 
 if not defined NEED_DEPS_INSTALL (
-  "%VENV_PY%" -c "import fastapi,uvicorn,sqlalchemy,pydantic,slowapi,jwt" >nul 2>&1
+  "%VENV_PY%" -c "from importlib.metadata import version; expected=[line.strip().split('==',1) for line in open('requirements.lock',encoding='utf-8') if '==' in line]; assert all(version(name)==value for name,value in expected)" >nul 2>&1
   if errorlevel 1 set "NEED_DEPS_INSTALL=1"
 )
 
 if defined NEED_DEPS_INSTALL (
   echo Installing dependencies...
   "%VENV_PY%" -m pip install --upgrade pip >nul 2>&1
-  "%VENV_PY%" -m pip install -r "%ROOT%\requirements.txt"
+  "%VENV_PY%" -m pip install -r "%ROOT%\requirements.lock"
   if errorlevel 1 (
     echo Failed to install dependencies
     pause
@@ -87,13 +87,13 @@ popd
 
 echo Starting servers...
 if not defined BACKEND_LISTENING (
-  start "EzOlimp Backend :%BACKEND_PORT%" cmd /k "cd /d ""%ROOT%\backend"" && ""%VENV_PY%"" -m uvicorn app.main:app --host 0.0.0.0 --port %BACKEND_PORT%"
+  start "EzOlimp Backend :%BACKEND_PORT%" cmd /k "cd /d ""%ROOT%\backend"" && ""%VENV_PY%"" -m uvicorn app.main:app --host 127.0.0.1 --port %BACKEND_PORT% --ws-max-size 65536"
 ) else (
   echo Backend already running on :%BACKEND_PORT%
 )
 
 if not defined FRONTEND_LISTENING (
-  start "EzOlimp Frontend :3000" cmd /k "cd /d ""%ROOT%\frontend"" && ""%VENV_PY%"" -m http.server %FRONTEND_PORT%"
+  start "EzOlimp Frontend :3000" cmd /k "cd /d ""%ROOT%\frontend"" && ""%VENV_PY%"" server.py %FRONTEND_PORT%"
 ) else (
   echo Frontend already running on :%FRONTEND_PORT%
 )

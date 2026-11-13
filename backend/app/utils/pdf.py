@@ -1,11 +1,11 @@
 import hashlib
 import json
 import re
+import math
+import time
 from pathlib import Path
-from urllib.request import urlretrieve, Request, urlopen
-
 from app.config import (
-    _safe_int, PROJECT_ROOT, PDF_SOURCE_CACHE_DIR, PDF_FRAGMENT_CACHE_DIR,
+    _safe_int, PDF_SOURCE_CACHE_DIR, PDF_FRAGMENT_CACHE_DIR,
     TASK_CROPS_DIR, POINTS_MARKER_RE,
 )
 from app.utils.text import (
@@ -19,6 +19,10 @@ from app.utils.attachments import (
     source_fragments_from_storage as _source_fragments_from_storage,
 )
 from app.config import _extract_source_url
+from app.utils.safe_http import (
+    MAX_PDF_BYTES, MAX_PDF_PAGES, MAX_PDF_DOWNLOAD_SECONDS,
+    open_pdf_url, validate_pdf_url,
+)
 
 
 def ensure_cache_dirs():
@@ -62,44 +66,45 @@ def ensure_local_pdf_path(source_url: str) -> Path:
     normalized_url = str(source_url or "").strip()
     if not normalized_url:
         raise RuntimeError("source_pdf_url is empty")
-    if normalized_url.startswith("http://") or normalized_url.startswith("https://"):
-        cache_path = source_pdf_cache_path(normalized_url)
-        if cache_path.exists() and cache_path.stat().st_size > 0:
-            return cache_path
-        tmp_path = cache_path.with_suffix(".tmp")
-        if tmp_path.exists():
-            tmp_path.unlink(missing_ok=True)
-            
-        req = Request(normalized_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'})
-        with urlopen(req, timeout=30) as response, open(tmp_path, 'wb') as out_file:
-            out_file.write(response.read())
-            
-        tmp_size = tmp_path.stat().st_size if tmp_path.exists() else 0
-        if tmp_size <= 0:
-            tmp_path.unlink(missing_ok=True)
+    approved_url = validate_pdf_url(normalized_url)
+    cache_path = source_pdf_cache_path(approved_url)
+    if cache_path.exists() and 0 < cache_path.stat().st_size <= MAX_PDF_BYTES:
+        return cache_path
+    if cache_path.exists():
+        cache_path.unlink(missing_ok=True)
+
+    tmp_path = cache_path.with_suffix(".tmp")
+    tmp_path.unlink(missing_ok=True)
+    total = 0
+    deadline = time.monotonic() + MAX_PDF_DOWNLOAD_SECONDS
+    try:
+        with open_pdf_url(approved_url, timeout=10) as response, open(tmp_path, "wb") as out_file:
+            content_length = response.headers.get("Content-Length")
+            if content_length and int(content_length) > MAX_PDF_BYTES:
+                raise RuntimeError("PDF exceeds the download size limit")
+            while True:
+                if time.monotonic() >= deadline:
+                    raise RuntimeError("PDF download exceeded the time limit")
+                chunk = response.read(min(64 * 1024, MAX_PDF_BYTES + 1 - total))
+                if not chunk:
+                    break
+                total += len(chunk)
+                if total > MAX_PDF_BYTES:
+                    raise RuntimeError("PDF exceeds the download size limit")
+                out_file.write(chunk)
+        if total <= 0:
             raise RuntimeError("downloaded PDF is empty")
         tmp_path.replace(cache_path)
         return cache_path
-    local_path = Path(normalized_url)
-    if not local_path.is_absolute():
-        local_path = PROJECT_ROOT / local_path
-    if not local_path.exists():
-        raise RuntimeError(f"source PDF not found: {local_path}")
-    return local_path
+    except Exception:
+        tmp_path.unlink(missing_ok=True)
+        raise
 
 
 def url_exists(url: str) -> bool:
-    if not url:
-        return False
-    if not (url.startswith("http://") or url.startswith("https://")):
-        path = Path(url)
-        if not path.is_absolute():
-            path = PROJECT_ROOT / path
-        return path.exists()
     for method in ("HEAD", "GET"):
         try:
-            request = Request(url, method=method)
-            with urlopen(request, timeout=12) as response:
+            with open_pdf_url(url, method=method, timeout=12) as response:
                 if 200 <= getattr(response, "status", 200) < 400:
                     return True
         except Exception:
@@ -357,17 +362,19 @@ def render_task_fragments(task):
         return {"available": False, "reason": "no_source_pdf", "images": []}
     try:
         local_pdf_path = ensure_local_pdf_path(source_url)
-    except Exception as exc:
-        return {"available": False, "reason": "source_pdf_unavailable", "error": str(exc), "images": [], "source_pdf_url": source_url}
+    except Exception:
+        return {"available": False, "reason": "source_pdf_unavailable", "error": "Approved PDF source unavailable", "images": [], "source_pdf_url": source_url}
     try:
         import pypdfium2 as pdfium
     except Exception:
         return {"available": False, "reason": "pdf_renderer_not_installed", "images": [], "source_pdf_url": source_url}
     try:
         pdf_doc = pdfium.PdfDocument(str(local_pdf_path))
-    except Exception as exc:
-        return {"available": False, "reason": "pdf_open_failed", "error": str(exc), "images": [], "source_pdf_url": source_url}
+    except Exception:
+        return {"available": False, "reason": "pdf_open_failed", "error": "PDF could not be opened", "images": [], "source_pdf_url": source_url}
     try:
+        if len(pdf_doc) > MAX_PDF_PAGES:
+            return {"available": False, "reason": "page_limit_exceeded", "images": [], "source_pdf_url": source_url}
         source_fragments = _source_fragments_from_storage(task.source_fragments)
         fragments = _normalize_source_fragments(source_fragments)
         fragments, refined = _refine_stored_fragments(task, local_pdf_path, fragments, pdf_doc)
@@ -382,7 +389,7 @@ def render_task_fragments(task):
         stats = local_pdf_path.stat()
         pdf_fingerprint = f"{local_pdf_path.resolve()}:{stats.st_mtime_ns}:{stats.st_size}"
 
-        for fragment in sorted(fragments, key=lambda f: f.get("order_index", 0)):
+        for fragment in sorted(fragments, key=lambda f: f.get("order_index", 0))[:20]:
             page_num = _safe_int(fragment.get("page"), None)
             if page_num is None or page_num < 1 or page_num > len(pdf_doc):
                 continue
@@ -393,7 +400,15 @@ def render_task_fragments(task):
                 page.close()
                 continue
             left, top, right, bottom = bbox
-            render_scale = 2.2
+            if page_width <= 0 or page_height <= 0 or page_width > 100_000 or page_height > 100_000:
+                page.close()
+                continue
+            render_scale = min(
+                2.2,
+                5000 / page_width,
+                5000 / page_height,
+                math.sqrt(20_000_000 / (page_width * page_height)),
+            )
             cache_key = hashlib.sha256(
                 json.dumps({"task_id": task.id, "pdf": pdf_fingerprint, "page": page_num,
                             "bbox": [left, top, right, bottom], "scale": render_scale}, sort_keys=True).encode("utf-8")

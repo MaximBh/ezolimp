@@ -19,8 +19,8 @@ def _check_access(user_id: int, current_user: User):
 def get_users(db: Session = Depends(get_db)):
     try:
         users = db.query(User).limit(10).all()
-        return {"users": [{"id": u.id, "username": u.username, "email": u.email, "full_name": u.full_name,
-                           "school": u.school, "grade": u.grade, "rating": u.rating, "is_admin": u.is_admin}
+        return {"users": [{"id": u.id, "username": u.username, "full_name": u.full_name,
+                           "school": u.school, "grade": u.grade, "rating": u.rating}
                           for u in users]}
     except Exception:
         raise HTTPException(status_code=500, detail="Ошибка при получении пользователей")
