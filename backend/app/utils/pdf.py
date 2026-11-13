@@ -296,6 +296,61 @@ def build_fallback_fragments(task, pdf_doc):
     return fragments
 
 
+def _refine_stored_fragments(task, local_pdf_path: Path, fragments: list[dict], pdf_doc):
+    if not fragments:
+        return fragments, False
+    areas = []
+    for fragment in fragments:
+        page_number = _safe_int(fragment.get("page"), None)
+        if page_number is None or page_number < 1 or page_number > len(pdf_doc):
+            continue
+        page = pdf_doc[page_number - 1]
+        try:
+            width, height = page.get_size()
+            bbox = normalize_visual_fragment(fragment, width, height)
+            if bbox:
+                left, top, right, bottom = bbox
+                areas.append((right - left) * (bottom - top))
+        finally:
+            page.close()
+    if areas and not all(area >= 0.9 for area in areas):
+        return fragments, False
+
+    statement = _normalize_text_value(
+        getattr(task, "full_problem_statement", "")
+        or getattr(task, "problem_statement", "")
+    )
+    if not statement:
+        return fragments, False
+
+    try:
+        from app.pdf_parser import extract_best_task_entry, _similarity
+
+        title = _normalize_text_value(getattr(task, "title", ""))
+        task_match = re.search(r"\b(?:задача|задание|task)\s+(\d{1,3})", title, re.IGNORECASE)
+        variant_match = re.search(r"\bвариант\s+(\d{1,3})", title, re.IGNORECASE)
+        parsed = extract_best_task_entry(
+            local_pdf_path,
+            task_number=int(task_match.group(1)) if task_match else None,
+            variant_number=int(variant_match.group(1)) if variant_match else None,
+            statement_hint=statement,
+        )
+        parsed_statement = _normalize_text_value(parsed.get("full_problem_statement") or "")
+        refined = _source_fragments_from_storage(parsed.get("source_fragments"))
+        if not parsed.get("found") or not refined or not parsed_statement:
+            return fragments, False
+        if _similarity(statement, parsed_statement) < 0.48:
+            statement_norm = _simplify_text_for_search(statement)
+            parsed_norm = _simplify_text_for_search(parsed_statement)
+            if not statement_norm or not parsed_norm or (
+                statement_norm not in parsed_norm and parsed_norm not in statement_norm
+            ):
+                return fragments, False
+        return refined, True
+    except Exception:
+        return fragments, False
+
+
 def render_task_fragments(task):
     source_url = get_source_pdf_url(task)
     if not source_url:
@@ -315,7 +370,8 @@ def render_task_fragments(task):
     try:
         source_fragments = _source_fragments_from_storage(task.source_fragments)
         fragments = _normalize_source_fragments(source_fragments)
-        visual_mode = "bbox" if fragments else "page_fallback"
+        fragments, refined = _refine_stored_fragments(task, local_pdf_path, fragments, pdf_doc)
+        visual_mode = "bbox" if fragments and (refined or source_fragments) else "page_fallback"
         if not fragments:
             fragments = build_fallback_fragments(task, pdf_doc)
         if not fragments:

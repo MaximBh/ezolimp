@@ -295,7 +295,7 @@ def ensure_tasks_schema_columns():
         db.close()
 
 
-def import_tasks_from_json():
+def import_tasks_from_json(delete_missing: bool = True):
     from app.database import SessionLocal, Task
     db = SessionLocal()
     try:
@@ -405,17 +405,18 @@ def import_tasks_from_json():
                 index[identity] = task
                 inserted += 1
 
-        for dup in duplicates:
-            db.delete(dup)
-            deleted += 1
-
-        for task in db.query(Task).all():
-            if task.created_by is not None:
-                continue
-            identity = _task_identity_key(task.title, task.subject, task.grade, task.problem_statement)
-            if identity not in payload_identities:
-                db.delete(task)
+        if delete_missing:
+            for dup in duplicates:
+                db.delete(dup)
                 deleted += 1
+
+            for task in db.query(Task).all():
+                if task.created_by is not None:
+                    continue
+                identity = _task_identity_key(task.title, task.subject, task.grade, task.problem_statement)
+                if identity not in payload_identities:
+                    db.delete(task)
+                    deleted += 1
 
         if inserted or updated or deleted:
             db.commit()

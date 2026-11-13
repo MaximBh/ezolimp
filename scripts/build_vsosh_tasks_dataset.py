@@ -5,6 +5,7 @@ import hashlib
 import json
 import re
 import sys
+import unicodedata
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -19,7 +20,7 @@ PDF_CACHE_DIR = BACKEND_CACHE_DIR / "pdf_sources"
 TASKS_JSON_PATH = ROOT_DIR / "tasks.json"
 
 sys.path.insert(0, str(ROOT_DIR))
-from backend.app.pdf_parser import _load_entries  # noqa: E402
+from backend.app.pdf_parser import _load_entries, _similarity  # noqa: E402
 
 
 ARCHIVE_YEAR_IDS = [
@@ -58,6 +59,9 @@ TARGET_GRADES = list(range(5, 12))
 TARGET_PER_SUBJECT_GRADE = 20
 TARGET_TOTAL_TASKS = 2000
 BASE_URL = "https://xn--b1ayi3a.xn--l1afu.xn--p1ai/archive/table/tasks/years/"
+CURRENT_TASKS_API_URL = "https://vos.olimpiada.ru/api/getTasks"
+CURRENT_FILES_BASE_URL = "https://vos.olimpiada.ru"
+CURRENT_SEASON = "2026-27"
 
 STAGE_RANK = {
     "school": 0,
@@ -65,12 +69,13 @@ STAGE_RANK = {
     "mun": 2,
     "reg": 3,
     "zakl": 4,
+    "final": 4,
 }
 
 PDF_LINK_RE = re.compile(r"""href=['"]([^'"]+\.pdf)['"]""", re.IGNORECASE)
 PDF_META_RE = re.compile(
     r"/(?P<season>\d{4}-\d{2})/"
-    r"(?P<stage>school|prigl|mun|reg|zakl)/"
+    r"(?P<stage>school|prigl|mun|reg|zakl|final)/"
     r"(?P<slug>[a-z0-9]+)/"
     r"(?P<name>[^/?#]+\.pdf)$",
     re.IGNORECASE,
@@ -78,12 +83,93 @@ PDF_META_RE = re.compile(
 SENTENCE_SPLIT_RE = re.compile(r"(?<=[\.\?!])\s+")
 WHITESPACE_RE = re.compile(r"\s+")
 TASK_WORD_RE = re.compile(r"(?:задач[аеи]|задани[ея]|task)\s+\d{1,3}", re.IGNORECASE)
+TASK_DOCUMENT_HEADING_RE = re.compile(
+    r"^\s*(?:задания?|задачи|разбор\s+заданий|ответы|решения)\s+"
+    r"(?:(?:школьного|пригласительного|муниципального|регионального|заключительного)\s+этапа|"
+    r"всероссийской\s+олимпиады)\b",
+    re.IGNORECASE,
+)
 ANSWER_PATTERNS = [
-    re.compile(r"(?im)^\s*итоговый\s+ответ\s*[:\-]\s*(.+)$"),
-    re.compile(r"(?im)^\s*ответ\s*[:\-]\s*(.+)$"),
-    re.compile(r"(?im)^\s*final\s+answer\s*[:\-]\s*(.+)$"),
+    re.compile(r"(?i)\bитоговый\s+ответ(?:ы)?\s*[:.\-–—]\s*(.+)$"),
+    re.compile(r"(?i)\bответ(?:ы)?\s*[:.\-–—]\s*(.+)$"),
+    re.compile(r"(?i)\bfinal\s+answer\s*[:\-]\s*(.+)$"),
+    re.compile(r"(?i)\banswers?\s*[:.\-–—]\s*(.+)$"),
+    re.compile(r"(?i)\b(?:respuestas?|r[eé]ponses?|rispost[ae]|antwort(?:en)?)\s*[:.\-–—]\s*(.+)$"),
+    re.compile(r"答案\s*[:：]\s*(.+)$"),
 ]
-_ANSWER_TRIM_RE = re.compile(r"\s+(?:решение|разбор|solution)[.:\s]", re.IGNORECASE)
+_REPEATED_ANSWER_LABEL_RE = re.compile(
+    r"(?:^|\s)(?:(?:итоговый)\s+)?(?:ответ|ответы|answers?)\s*[:.]",
+    re.IGNORECASE,
+)
+_VARIANT_REFERENCE_RE = re.compile(
+    r"варианты?\s+задан(?:ия|ий|ие)\s+(?:смотрите|см\.?)\s+(?:на\s+)?стр\.?\s*\d+\.?",
+    re.IGNORECASE,
+)
+_INLINE_TASK_DOCUMENT_HEADER_RE = re.compile(
+    r"\bзадания?\s+(?:пригласительного|школьного|муниципального|регионального|заключительного)\s+"
+    r"этапа\s+всош\s+20\d{2}(?:[/-]\d{2,4})?\s+по\s+.{1,100}?\b(?:[5-9]|1[01])\s+класс\b",
+    re.IGNORECASE,
+)
+_BARE_ENGLISH_ANSWER_RE = re.compile(
+    r"\bAnswers?\s+((?:[A-H]|\d{1,2})(?:(?:\s+|[,;]\s*)(?:[A-H]|\d{1,2}))*)"
+)
+_ANSWER_TRIM_RE = re.compile(
+    r"\s+(?:за\s+каждый\s+правильный\s+ответ|за\s+каждый\s+верный\s+ответ|"
+    r"за\s+каждый\s+верный\s+выбор|"
+    r"за\s+каждое\s+верное\s+(?:соответствие|соотнесение|сопоставление)|"
+    r"за\s+верный\s+ответ|за\s+правильный\s+ответ|"
+    r"за\s+каждое?\s+совпадение(?:\s+с\s+правильным\s+ответом)?|"
+    r"балл\s+за\s+(?:каждый|каждое|каждую)|"
+    r"по\s+\d{1,2}\s+балл\w*\s+за\s+кажд\w*|\d{1,2}\s+балл\w*|"
+    r"максимум\s+за\s+задание|"
+    r"максимальн\w*\s+балл|решение|разбор|solution|explanation|пояснение|"
+    r"критери(?:й|и)(?:\s+оценивания)?|точное\s+совпадение|"
+    r"полное\s+совпадение|"
+    r"for\s+each\s+(?:correct\s+)?answer|(?:one|two|three|\d+)\s+points?\s+for|"
+    r"(?:un\s+)?puntos?\s+por\s+cada|(?:un\s+)?points?\s+par\s+bonne\s+r[eé]ponse|"
+    r"(?:un\s+)?point\s+pour\s+chaque\s+(?:bonne\s+)?r[eé]ponse|"
+    r"(?:ein\s+)?punkt(?:e)?\s+f[uü]r\s+jede\w*\s+(?:richtige\s+)?antwort|"
+    r"(?:un\s+)?punto\s+per\s+ogni\s+(?:risposta\s+)?corrett\w*|"
+    r"верный\s+ответ|правильный\s+ответ|неверный\s+ответ)(?:[.:,\s]|$)",
+    re.IGNORECASE,
+)
+_ANSWER_POSTFIX_TRIM_RE = re.compile(
+    r"\s+(?:к\s+задаче\s+\d|A\s+B\s+C\s+D\s+E\b|"
+    r"задани(?:я|е)\s+\d{1,3}(?:\s*[–—-]\s*\d{1,3})?\b)",
+    re.IGNORECASE,
+)
+_ANSWER_SCORING_MARKER_RE = re.compile(
+    r"\s+(?:точное\s+совпадение(?:\s+с\s+правильным\s+ответом)?|"
+    r"полное\s+совпадение(?:\s+с\s+правильным\s+ответом)?|"
+    r"за\s+кажд(?:ый|ое|ую)\s+(?:верн\w*|правильн\w*|совпадение)|"
+    r"за\s+каждое?\s+совпадение(?:\s+с\s+правильным\s+ответом)?|"
+    r"балл\s+за\s+(?:каждый|каждое|каждую)|"
+    r"по\s+\d{1,2}\s+балл\w*\s+за\s+кажд\w*|\d{1,2}\s+балл\w*|"
+    r"критери(?:й|и)(?:\s+оценивания)?|"
+    r"максимум\s+за\s+задание|максимальн\w*\s+балл|всего\s+за\s+задание)[.:,\s]",
+    re.IGNORECASE,
+)
+
+CURRENT_SUBJECT_NAMES = {
+    "ai": "информатика: искусственный интеллект",
+    "astr": "астрономия",
+    "biol": "биология",
+    "chem": "химия",
+    "econ": "экономика",
+    "ekol": "экология",
+    "engl": "английский",
+    "geog": "география",
+    "hist": "история",
+    "law": "право",
+    "litr": "литература",
+    "math": "математика",
+    "phys": "физика",
+    "prog": "информатика: программирование",
+    "robo": "робототехника",
+    "russ": "русский",
+    "secr": "информатика: информационная безопасность",
+    "soci": "обществознание",
+}
 
 STOP_TOKENS = {
     "tasks",
@@ -120,6 +206,7 @@ class PdfFile:
     name: str
     kind: str
     grades: list[int]
+    subject_name: str = ""
 
 
 def _fetch_archive_pdf_links(year_id: str) -> list[str]:
@@ -137,6 +224,65 @@ def _fetch_archive_pdf_links(year_id: str) -> list[str]:
     return deduped
 
 
+def _fetch_current_pdf_catalog() -> list[PdfFile]:
+    request = Request(
+        CURRENT_TASKS_API_URL,
+        headers={
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+        },
+    )
+    with urlopen(request, timeout=40) as response:
+        payload = json.loads(response.read().decode("utf-8", errors="replace"))
+
+    catalog: list[PdfFile] = []
+    seen: set[str] = set()
+    for row in payload.get("data", []):
+        if not isinstance(row, dict) or str(row.get("yname") or "").strip() != "2026/2027":
+            continue
+        slug_hint = str(row.get("subject_psevdo") or "").strip().lower()
+        official_subject_name = _clean_text(str(row.get("subject") or ""), limit=120)
+        if not slug_hint or not official_subject_name:
+            continue
+        html = str(row.get("tasks") or "")
+        for match in PDF_LINK_RE.finditer(html):
+            link = urljoin(CURRENT_FILES_BASE_URL, match.group(1))
+            if link in seen:
+                continue
+            parsed = PDF_META_RE.search(link)
+            if not parsed or parsed.group("season").lower() != CURRENT_SEASON:
+                continue
+            slug = parsed.group("slug").lower()
+            if slug != slug_hint:
+                continue
+            name = parsed.group("name").lower()
+            grades = _extract_grades_from_name(name)
+            if not grades or not (set(grades) & set(TARGET_GRADES)):
+                continue
+            stage = parsed.group("stage").lower()
+            if stage == "final":
+                stage = "zakl"
+            kind = _classify_kind(name)
+            if kind not in {"tasks", "solution"}:
+                continue
+            seen.add(link)
+            catalog.append(
+                PdfFile(
+                    url=link,
+                    year_id="2026_2027",
+                    season=CURRENT_SEASON,
+                    stage=stage,
+                    slug=slug,
+                    name=name,
+                    kind=kind,
+                    grades=grades,
+                    subject_name=official_subject_name,
+                )
+            )
+    return catalog
+
+
 def _extract_grades_from_name(name: str) -> list[int]:
     nums = [int(x) for x in re.findall(r"(?<!\d)(\d{1,2})(?!\d)", name)]
     grades = sorted({n for n in nums if 1 <= n <= 11})
@@ -149,6 +295,8 @@ def _extract_grades_from_name(name: str) -> list[int]:
 
 def _classify_kind(name: str) -> str:
     lower = name.lower()
+    if "taskskrit" in lower or "criteria" in lower:
+        return "other"
     if "task" in lower and not any(token in lower for token in ("sol", "ans", "answer")):
         return "tasks"
     if any(token in lower for token in ("sol", "ans", "answer")):
@@ -211,7 +359,11 @@ def _ensure_local_pdf(url: str) -> Path:
 
 
 def _clean_text(text: str, limit: int = 12000) -> str:
-    clean = str(text or "").replace("\ufeff", " ")
+    clean = unicodedata.normalize("NFC", str(text or "").replace("\ufeff", " "))
+    clean = re.sub(r"[\uFFFE\uFFFF]", "", clean)
+    clean = clean.replace("\uFFFD", "□")
+    clean = WHITESPACE_RE.sub(" ", clean).strip()
+    clean = _INLINE_TASK_DOCUMENT_HEADER_RE.sub(" ", clean)
     clean = WHITESPACE_RE.sub(" ", clean).strip()
     return clean[:limit].strip()
 
@@ -220,6 +372,13 @@ def _looks_like_task_text(text: str) -> bool:
     if not text or len(text) < 35:
         return False
     if len(text) > 20000:
+        return False
+    if TASK_DOCUMENT_HEADING_RE.match(text):
+        return False
+    # Variant-only pages often begin with a task label and a cross-reference to
+    # the table on another page. That is not a task condition on its own.
+    without_variant_reference = _VARIANT_REFERENCE_RE.sub(" ", text)
+    if len(WHITESPACE_RE.sub(" ", without_variant_reference).strip(" .:-")) < 35:
         return False
     if TASK_WORD_RE.findall(text) and len(TASK_WORD_RE.findall(text)) > 4:
         return False
@@ -289,18 +448,58 @@ def _extract_answer(text: str) -> str:
     clean = _clean_text(text, limit=4000)
     if not clean:
         return "see solution"
+    if re.match(r"^(?:критери(?:й|и)|criteria|scoring)\b", clean, re.IGNORECASE):
+        return "see solution"
+    scoring_marker = _ANSWER_SCORING_MARKER_RE.search(clean)
+    scoring_start = scoring_marker.start() if scoring_marker else None
     for pattern in ANSWER_PATTERNS:
-        match = pattern.search(clean)
-        if match:
+        for match in pattern.finditer(clean):
+            if scoring_start is not None and match.start() > scoring_start:
+                continue
+            prefix = clean[max(0, match.start() - 40):match.start()]
+            if re.search(
+                r"(?:верн\w*|правильн\w*|неверн\w*|отсутствующ\w*|"
+                r"correct|right|wrong|incorrect|richtige|correcta|correcte)\s+$",
+                prefix,
+                re.IGNORECASE,
+            ):
+                continue
             raw = match.group(1)
+            # Some answer PDFs flatten several variant keys into one text block.
+            # Without a variant boundary we cannot safely choose one of them.
+            if _REPEATED_ANSWER_LABEL_RE.search(raw):
+                return "see solution"
             trimmed = _ANSWER_TRIM_RE.split(raw, maxsplit=1)[0]
+            trimmed = _ANSWER_POSTFIX_TRIM_RE.split(trimmed, maxsplit=1)[0]
             answer = _clean_text(trimmed, limit=256).rstrip(".")
+            answer = re.sub(r"\s*\(\s*по\s+\d{1,2}\s+балл\w*\s*\)", "", answer, flags=re.IGNORECASE)
+            answer = _ANSWER_SCORING_MARKER_RE.split(answer, maxsplit=1)[0].rstrip(" .,:;–—-")
+            if re.match(r"^(?:критери(?:й|и)|criteria|scoring)\b", answer, re.IGNORECASE):
+                continue
+            if re.match(r"^\d+\s+балл(?:а|ов)?\b", answer, re.IGNORECASE):
+                continue
             if answer:
                 return answer
 
-    tail_numbers = re.findall(r"(?<!\d)(\d+(?:[.,]\d+)?)(?!\d)", clean[-250:])
-    if tail_numbers:
-        return tail_numbers[-1].replace(",", ".")
+    bare_answer = _BARE_ENGLISH_ANSWER_RE.search(clean)
+    if bare_answer and (scoring_start is None or bare_answer.start() < scoring_start):
+        return _clean_text(bare_answer.group(1), limit=1800).strip(" .,:;–—-")
+
+    if scoring_marker:
+        key_candidate = _clean_text(clean[:scoring_start], limit=1800).strip(" .,:;–—-")
+        if (
+            key_candidate
+            and len(key_candidate) <= 180
+            and "?" not in key_candidate
+            and not re.match(r"^\d+$", key_candidate)
+            and not re.search(
+                r"\b(?:задач[аеи]|задани[ея]|выберите|найдите|укажите|отметьте|"
+                r"сопоставьте|решите|заполните|определите|ответьте|рассмотрим|критери[йи]|решение)\b",
+                key_candidate,
+                re.IGNORECASE,
+            )
+        ):
+            return key_candidate
     return "see solution"
 
 
@@ -457,6 +656,172 @@ def _load_entries_cached(url: str, cache: dict[str, list[dict[str, Any]]]) -> li
         return []
     cache[url] = entries
     return entries
+
+
+def build_current_dataset() -> dict[str, Any]:
+    """Build tasks from the current official Moscow archive without reloading old years."""
+    catalog = _fetch_current_pdf_catalog()
+    task_files = [item for item in catalog if item.kind == "tasks"]
+    solution_files = [item for item in catalog if item.kind == "solution"]
+    solution_lookup: dict[tuple[str, str, str], list[PdfFile]] = defaultdict(list)
+    for item in solution_files:
+        solution_lookup[(item.season, item.stage, item.slug)].append(item)
+    solution_urls = {item.url for item in solution_files}
+    task_files = [
+        item for item in task_files
+        if _match_solution_file(item, solution_lookup, solution_urls) is not None
+    ]
+
+    entries_cache: dict[str, list[dict[str, Any]]] = {}
+    tasks: list[dict[str, Any]] = []
+    bucket_counts: dict[tuple[str, int], int] = defaultdict(int)
+    seen: set[tuple[str, int, int | None, int, str]] = set()
+
+    for task_file in sorted(task_files, key=lambda item: (item.slug, item.stage, item.name)):
+        subject = CURRENT_SUBJECT_NAMES.get(task_file.slug) or task_file.subject_name.lower()
+        if not subject:
+            continue
+        task_entries = _load_entries_cached(task_file.url, entries_cache)
+        if not task_entries:
+            continue
+
+        solution_file = _match_solution_file(task_file, solution_lookup, solution_urls)
+        solution_map: dict[tuple[int, int | None], str] = {}
+        if solution_file:
+            for entry in _load_entries_cached(solution_file.url, entries_cache):
+                try:
+                    task_number = int(entry.get("task_number"))
+                except (TypeError, ValueError):
+                    continue
+                try:
+                    variant = int(entry.get("variant")) if entry.get("variant") is not None else None
+                except (TypeError, ValueError):
+                    variant = None
+                text = _clean_text(
+                    entry.get("official_solution") or entry.get("statement"),
+                    limit=16000,
+                )
+                if not text:
+                    continue
+                key = (task_number, variant)
+                if len(text) > len(solution_map.get(key, "")):
+                    solution_map[key] = text
+
+        for task_entry in task_entries:
+            statement = _clean_text(task_entry.get("statement"), limit=15000)
+            statement = _clean_text(_VARIANT_REFERENCE_RE.sub(" ", statement), limit=15000)
+            if not _looks_like_task_text(statement):
+                continue
+            try:
+                task_number = int(task_entry.get("task_number"))
+            except (TypeError, ValueError):
+                continue
+            try:
+                variant = int(task_entry.get("variant")) if task_entry.get("variant") is not None else None
+            except (TypeError, ValueError):
+                variant = None
+
+            solution_candidate = _clean_text(
+                solution_map.get((task_number, variant))
+                or solution_map.get((task_number, None))
+                or task_entry.get("official_solution")
+                or "",
+                limit=15000,
+            )
+            answer = _extract_answer(solution_candidate)
+            # Some answer-booklet PDFs repeat the questions verbatim instead of
+            # providing a key. Keep them as source documents, but don't expose a
+            # duplicate condition as the official solution.
+            duplicate_solution = bool(
+                solution_candidate and _similarity(statement, solution_candidate) >= 0.82
+            )
+            ambiguous_solution_key = bool(
+                variant is None
+                and len(_REPEATED_ANSWER_LABEL_RE.findall(solution_candidate)) > 1
+            )
+            official_solution = (
+                "" if duplicate_solution or ambiguous_solution_key else solution_candidate
+            )
+
+            try:
+                page_start = int(task_entry.get("page_start") or 0) or None
+                page_end = int(task_entry.get("page_end") or 0) or page_start
+            except (TypeError, ValueError):
+                page_start = page_end = None
+            source_fragments = _normalize_source_fragments(task_entry, page_start, page_end)
+            if not source_fragments:
+                continue
+
+            statement_hash = hashlib.sha1(statement.encode("utf-8")).hexdigest()[:12]
+            for grade in sorted(set(task_file.grades) & set(TARGET_GRADES)):
+                identity = (task_file.url, task_number, variant, grade, statement_hash)
+                if identity in seen:
+                    continue
+                seen.add(identity)
+                bucket = (subject, grade)
+                index_in_bucket = bucket_counts[bucket]
+                bucket_counts[bucket] += 1
+                difficulty, points = _difficulty_and_points(index_in_bucket)
+                base_id = hashlib.sha1(
+                    f"{task_file.url}|{task_number}|{variant}|{grade}|{statement_hash}".encode("utf-8")
+                ).hexdigest()
+                variant_part = f" вариант {variant}" if variant is not None else ""
+                title = (
+                    f"ВСОШ 2026 {grade} класс {subject} задача {task_number}{variant_part} "
+                    f"({task_file.stage}) #{index_in_bucket + 1}-{base_id[:10]}"
+                )
+                explanation = (
+                    _build_ai_explanation(statement, official_solution, answer, subject, grade)
+                    if official_solution
+                    else ""
+                )
+                tasks.append(
+                    {
+                        "title": title,
+                        "problem_statement": statement,
+                        "answer": answer,
+                        "subject": subject,
+                        "grade": grade,
+                        "difficulty": difficulty,
+                        "points": points,
+                        "input_format": None,
+                        "output_format": None,
+                        "examples": None,
+                        "solution_explanation": explanation,
+                        "topic": "ВСОШ",
+                        "tags": "vsosh,official-task,2026-27",
+                        "time_limit": 900,
+                        "attachments": [
+                            {
+                                "type": "pdf",
+                                "title": "Оригинал условия (PDF)",
+                                "pdf_url": task_file.url,
+                            }
+                        ],
+                        "source_pdf_url": task_file.url,
+                        "source_solution_pdf_url": (
+                            solution_file.url
+                            if solution_file and not duplicate_solution
+                            else ""
+                        ),
+                        "source_page_start": page_start,
+                        "source_page_end": page_end,
+                        "source_fragments": source_fragments,
+                        "full_problem_statement": statement,
+                        "official_solution_text": official_solution,
+                        "free_ai_explanation": explanation,
+                        "free_ai_status": "ready" if explanation else "empty",
+                        "ai_answer_short": None,
+                        "ai_solution_full": None,
+                        "ai_solution_status": "empty",
+                        "ai_solution_model": None,
+                        "ai_solution_error": None,
+                        "ai_solution_hash": None,
+                        "ai_solution_generated_at": None,
+                    }
+                )
+
+    return {"tasks": tasks}
 
 
 def build_dataset() -> dict[str, Any]:
